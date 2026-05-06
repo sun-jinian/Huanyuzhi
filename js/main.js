@@ -7,13 +7,34 @@ document.addEventListener('DOMContentLoaded', () => {
   window.GlobeController.init();
   window.SettingsPanelController.init();
 
-  window.GlobeController.onReticlePlaceChange((placeKey) => {
-    if (!AppState.chatEnabled || AppState.chatDisabled) return;
+  window.GlobeController.onReticleDragStart(() => {
+    window.ChatPanelController.enterPreviewMode();
+  });
+
+  window.GlobeController.onReticleCityPreview((city) => {
+    if (AppState.chatDisabled) return;
     const token = ++window.GlobeController.chatUpdateToken;
     setTimeout(() => {
       if (token !== window.GlobeController.chatUpdateToken) return;
-      if (!AppState.chatEnabled || AppState.chatDisabled) return;
-      if (!window.ExploreDockController.setCurrentPlace(placeKey)) return;
+      if (AppState.chatDisabled) return;
+      window.ChatPanelController.setCity(city, { preview: true });
+      window.ChatPanelController.open();
+    }, 80);
+  });
+
+  window.GlobeController.onReticleCityEnter((city) => {
+    if (AppState.chatDisabled) return;
+    window.ChatPanelController.setCity(city);
+    window.ChatPanelController.open();
+  });
+
+  window.GlobeController.onReticlePlaceChange((city) => {
+    if (AppState.chatDisabled) return;
+    const token = ++window.GlobeController.chatUpdateToken;
+    setTimeout(() => {
+      if (token !== window.GlobeController.chatUpdateToken) return;
+      if (AppState.chatDisabled) return;
+      window.ChatPanelController.setCity(city);
       window.ChatPanelController.open();
     }, 130);
   });
@@ -40,6 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => {
         AppState.exploreEnabled = true;
         window.GlobeController.setExploreEnabled(true);
+        window.GlobeController.setStopRotate(true);
+        const stopRotateSetting = document.getElementById('setting-stop-rotate');
+        if (stopRotateSetting) stopRotateSetting.checked = true;
         window.ExploreDockController.show();
         if (AppState.chatEnabled && !AppState.chatDisabled) {
           window.ChatPanelController.open();

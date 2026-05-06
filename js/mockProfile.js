@@ -5,7 +5,24 @@
 // Internal mock data (not exposed directly)
 const __MOCK_DOCK_DATA__ = {
   currentPlaceKey: '',
-  favoriteOrder: ['shanghai', 'beijing', 'wenzhou', 'qingtian', 'fujian', 'tianjin', 'lishui', 'taiwan'],
+  favoriteOrder: [
+    'shanghai',
+    'beijing',
+    'wenzhou',
+    'qingtian',
+    'fujian',
+    'tianjin',
+    'lishui',
+    'taiwan',
+    'hangzhou',
+    'suzhou',
+    'chengdu',
+    'chongqing',
+    'xian',
+    'guangzhou',
+    'shenzhen',
+    'nanjing'
+  ],
   favoriteState: {
     shanghai: true,
     beijing: true,
@@ -14,7 +31,15 @@ const __MOCK_DOCK_DATA__ = {
     fujian: true,
     tianjin: true,
     lishui: true,
-    taiwan: true
+    taiwan: true,
+    hangzhou: true,
+    suzhou: true,
+    chengdu: true,
+    chongqing: true,
+    xian: true,
+    guangzhou: true,
+    shenzhen: true,
+    nanjing: true
   },
   placeProfiles: {
     shanghai: {
@@ -72,6 +97,62 @@ const __MOCK_DOCK_DATA__ = {
       food: ['卤肉饭', '蚵仔煎', '牛肉面'],
       sights: ['台北101', '阿里山', '日月潭'],
       stays: ['台北设计酒店', '花莲海岸民宿']
+    },
+    hangzhou: {
+      address: '杭州，中国',
+      region: 'Hangzhou, China',
+      food: ['西湖醋鱼', '龙井虾仁', '片儿川'],
+      sights: ['西湖', '灵隐寺', '京杭大运河'],
+      stays: ['西湖湖畔酒店', '满觉陇茶宿']
+    },
+    suzhou: {
+      address: '苏州，中国',
+      region: 'Suzhou, China',
+      food: ['松鼠桂鱼', '苏式汤面', '鲜肉月饼'],
+      sights: ['拙政园', '平江路', '金鸡湖'],
+      stays: ['园林精品酒店', '平江路民宿']
+    },
+    chengdu: {
+      address: '成都，中国',
+      region: 'Chengdu, China',
+      food: ['火锅', '担担面', '钟水饺'],
+      sights: ['宽窄巷子', '武侯祠', '青城山'],
+      stays: ['太古里设计酒店', '青城山温泉民宿']
+    },
+    chongqing: {
+      address: '重庆，中国',
+      region: 'Chongqing, China',
+      food: ['重庆小面', '毛血旺', '酸辣粉'],
+      sights: ['洪崖洞', '解放碑', '磁器口古镇'],
+      stays: ['江景高层酒店', '山城老街民宿']
+    },
+    xian: {
+      address: '西安，中国',
+      region: "Xi'an, China",
+      food: ['肉夹馍', '羊肉泡馍', '凉皮'],
+      sights: ['兵马俑', '大雁塔', '西安城墙'],
+      stays: ['钟楼精品酒店', '城墙根民宿']
+    },
+    guangzhou: {
+      address: '广州，中国',
+      region: 'Guangzhou, China',
+      food: ['早茶', '烧鹅', '艇仔粥'],
+      sights: ['沙面', '陈家祠', '珠江夜游'],
+      stays: ['珠江新城酒店', '东山口洋楼民宿']
+    },
+    shenzhen: {
+      address: '深圳，中国',
+      region: 'Shenzhen, China',
+      food: ['潮汕牛肉火锅', '肠粉', '客家酿豆腐'],
+      sights: ['深圳湾公园', '华侨城创意园', '大鹏所城'],
+      stays: ['南山商务酒店', '大鹏海边民宿']
+    },
+    nanjing: {
+      address: '南京，中国',
+      region: 'Nanjing, China',
+      food: ['盐水鸭', '鸭血粉丝汤', '牛肉锅贴'],
+      sights: ['夫子庙', '中山陵', '秦淮河'],
+      stays: ['老门东精品酒店', '秦淮河畔客栈']
     }
   }
 };

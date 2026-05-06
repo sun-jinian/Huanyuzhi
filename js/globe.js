@@ -8,6 +8,8 @@ window.GlobeController = {
   globe: null,
   cloudLayer: null,
   atmosphere: null,
+  cityMarkerGroup: null,
+  reticleEl: null,
   
   // State
   isDragging: false,
@@ -15,6 +17,12 @@ window.GlobeController = {
   velX: 0,
   velY: 0,
   autoRotate: true,
+  dragReleaseAt: 0,
+  reticleX: window.innerWidth / 2,
+  reticleY: window.innerHeight / 2,
+  reticleRadiusPx: 35,
+  markerHitRadiusPx: 5,
+  previewCityId: '',
   targetDistance: 3.2,
   currentDistance: 3.2,
   lastCameraDistance: 3.2,
@@ -22,8 +30,16 @@ window.GlobeController = {
   GROUP_ROT: { x: 0, y: 0 },
   pendingDrag: { dx: 0, dy: 0 },
   reticleActivePlace: '',
+  centeredCityId: '',
+  reticleReleaseCenterTimer: null,
+  animationFrameId: null,
+  isRenderingFrame: false,
+  sceneDirty: true,
   chatUpdateToken: 0,
   lastReticleProbe: 0,
+  cityMarkerBaseOpacity: 1,
+  cityMarkerDimOpacity: 0.6,
+  cityMarkerActiveOpacity: 1,
   
   // Quality settings
   fpsFrames: 0,
@@ -53,9 +69,15 @@ window.GlobeController = {
   reticleRaycaster: null,
   reticleNdc: null,
   mouse2: null,
+  markerProjectWorldDir: null,
+  markerProjectNdc: null,
+  markerProjectEuler: null,
   
   // Callback
   onPlaceChangeCallback: null,
+  onPreviewCityCallback: null,
+  onEnterCityCallback: null,
+  onReticleDragStartCallback: null,
 
   init() {
     this.setupRenderer();
@@ -65,11 +87,13 @@ window.GlobeController = {
     this.setupGlobe();
     this.setupLights();
     this.setupMarkers();
+    this.setupReticle();
     this.setupDragAndRotate();
     this.setupZoom();
     this.setupRaycasters();
     this.setupResize();
-    this.animate();
+    this.setupVisibilityHandling();
+    this.requestRender();
   },
 
   setupRenderer() {
@@ -195,30 +219,65 @@ window.GlobeController = {
   },
 
   setupMarkers() {
-    const profiles = window.MockProfile.getProfiles();
-    const placeCoordinates = {}; // Empty by design, preserve interface
-    
-    Object.entries(profiles).forEach(([key]) => {
-      const coord = placeCoordinates[key];
-      if (!coord) return;
-      const [lat, lon] = coord;
-      const pos = this.latLon(lat, lon, 1.015);
-      const marker = new THREE.Mesh(
-        new THREE.CircleGeometry(0.012, 18),
-        new THREE.MeshBasicMaterial({
-          color: 0x9edaff,
-          transparent: true,
-          opacity: 0.9,
-          side: THREE.DoubleSide
-        })
-      );
+    this.cityMarkerGroup = new THREE.Group();
+    this.cityMarkerGroup.visible = false;
+    this.scene.add(this.cityMarkerGroup);
+    this.loadCityMarkers();
+  },
+
+  async loadCityMarkers() {
+    try {
+      const response = await fetch(`${window.AppConfig.apiBase}/api/cities`, {
+        cache: 'no-store',
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) throw new Error('Failed to load city coordinates');
+      const data = await response.json();
+      this.renderCityMarkers(data.cities || []);
+    } catch (error) {
+      console.warn('City markers unavailable. Start the Node server to load database-backed dots.', error);
+    }
+  },
+
+  renderCityMarkers(cities) {
+    const markerGeometry = new THREE.CircleGeometry(0.0038, 12);
+    const makeMarkerMaterial = () => new THREE.MeshBasicMaterial({
+      color: 0x00d287,
+      transparent: true,
+      opacity: this.cityMarkerBaseOpacity,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+
+    cities.forEach(city => {
+      if (!Number.isFinite(city.latitude) || !Number.isFinite(city.longitude)) return;
+      const pos = this.latLon(city.latitude, city.longitude, 1.018);
+      const markerMaterial = makeMarkerMaterial();
+      const marker = new THREE.Mesh(markerGeometry, markerMaterial);
       marker.position.copy(pos);
       marker.lookAt(pos.clone().multiplyScalar(3));
-      marker.userData.placeKey = key;
-      this.scene.add(marker);
-      this.allObjects.push(marker);
+      marker.userData.city = city;
+      marker.userData.chatRoomId = city.cityId;
+      marker.userData.localPosition = pos.clone();
+      this.cityMarkerGroup.add(marker);
       this.cityMarkerMeshes.push(marker);
     });
+  },
+
+  setupReticle() {
+    this.reticleEl = document.getElementById('screen-reticle');
+    if (!this.reticleEl) return;
+
+    this.setReticlePosition();
+  },
+
+  setReticlePosition() {
+    this.reticleX = this.viewportW / 2;
+    this.reticleY = this.viewportH / 2;
+    if (this.reticleEl) {
+      this.reticleEl.style.left = '50%';
+      this.reticleEl.style.top = '50%';
+    }
   },
 
   setupDragAndRotate() {
@@ -233,12 +292,16 @@ window.GlobeController = {
       this.autoRotate = false;
       this.velX = 0;
       this.velY = 0;
+      this.cancelReticleReleaseCenter();
+      this.clearCenteredCity();
+      this.requestRender();
     });
 
     canvas.addEventListener('pointermove', e => {
       if (!this.isDragging || e.pointerId !== this.activePointerId) return;
       this.pendingDrag.dx += e.movementX;
       this.pendingDrag.dy += e.movementY;
+      this.requestRender();
     });
 
     canvas.addEventListener('pointerup', e => {
@@ -256,7 +319,42 @@ window.GlobeController = {
     this.activePointerId = null;
     this.pendingDrag.dx = 0;
     this.pendingDrag.dy = 0;
-    setTimeout(() => { this.autoRotate = true; }, 1500);
+    this.dragReleaseAt = performance.now();
+    this.scheduleReticleReleaseCenter();
+    this.requestRender();
+    setTimeout(() => {
+      this.autoRotate = true;
+      this.requestRender();
+    }, 1500);
+  },
+
+  cancelReticleReleaseCenter() {
+    if (!this.reticleReleaseCenterTimer) return;
+    clearTimeout(this.reticleReleaseCenterTimer);
+    this.reticleReleaseCenterTimer = null;
+  },
+
+  scheduleReticleReleaseCenter() {
+    this.cancelReticleReleaseCenter();
+    if (!AppState.exploreEnabled || this.cityMarkerMeshes.length === 0) {
+      this.clearCenteredCity();
+      return;
+    }
+
+    const hit = this.getReticleCityHit();
+    if (!hit) {
+      this.previewCityId = '';
+      this.clearCenteredCity();
+      return;
+    }
+
+    const markerToCenter = hit.marker;
+    this.reticleReleaseCenterTimer = setTimeout(() => {
+      this.reticleReleaseCenterTimer = null;
+      if (this.isDragging || !AppState.exploreEnabled) return;
+
+      this.enterCityMarker(markerToCenter);
+    }, 500);
   },
 
   setupZoom() {
@@ -271,6 +369,7 @@ window.GlobeController = {
         this.minDistance,
         this.maxDistance
       );
+      this.requestRender();
     }, { passive: false });
 
     canvas.addEventListener('touchstart', e => {
@@ -293,6 +392,7 @@ window.GlobeController = {
         this.minDistance,
         this.maxDistance
       );
+      this.requestRender();
     }, { passive: false });
 
     canvas.addEventListener('touchend', () => {
@@ -305,6 +405,9 @@ window.GlobeController = {
     this.mouse2 = new THREE.Vector2();
     this.reticleRaycaster = new THREE.Raycaster();
     this.reticleNdc = new THREE.Vector2(0, 0);
+    this.markerProjectWorldDir = new THREE.Vector3();
+    this.markerProjectNdc = new THREE.Vector3();
+    this.markerProjectEuler = new THREE.Euler(0, 0, 0, 'XYZ');
   },
 
   setupResize() {
@@ -315,6 +418,24 @@ window.GlobeController = {
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(this.viewportW, this.viewportH);
       this.applyRendererQuality();
+      this.setReticlePosition();
+      this.requestRender();
+    });
+  },
+
+  setupVisibilityHandling() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        if (this.animationFrameId !== null) {
+          cancelAnimationFrame(this.animationFrameId);
+          this.animationFrameId = null;
+        }
+        return;
+      }
+
+      this.fpsFrames = 0;
+      this.fpsSampleStart = performance.now();
+      this.requestRender();
     });
   },
 
@@ -331,6 +452,10 @@ window.GlobeController = {
   applyRotation() {
     this.globe.rotation.x = this.GROUP_ROT.x;
     this.globe.rotation.y = this.GROUP_ROT.y;
+    if (this.cityMarkerGroup) {
+      this.cityMarkerGroup.rotation.x = this.GROUP_ROT.x;
+      this.cityMarkerGroup.rotation.y = this.GROUP_ROT.y;
+    }
     this.allObjects.forEach(o => {
       o.rotation.x = this.GROUP_ROT.x;
       o.rotation.y = this.GROUP_ROT.y;
@@ -344,6 +469,7 @@ window.GlobeController = {
     this.renderer.setPixelRatio(
       Math.min(window.devicePixelRatio, qualityCap)
     );
+    this.requestRender();
   },
 
   applyLayerVisibility() {
@@ -360,16 +486,19 @@ window.GlobeController = {
     } else if (!this.isDragging) {
       this.autoRotate = true;
     }
+    this.requestRender();
   },
 
   setCloudDisabled(value) {
     AppState.cloudLayerDisabled = value;
     this.applyLayerVisibility();
+    this.requestRender();
   },
 
   setAtmosphereDisabled(value) {
     AppState.atmosphereLayerDisabled = value;
     this.applyLayerVisibility();
+    this.requestRender();
   },
 
   setQuality(level) {
@@ -380,14 +509,46 @@ window.GlobeController = {
     this.fpsFrames = 0;
     this.fpsSampleStart = performance.now();
     this.applyRendererQuality();
+    this.requestRender();
   },
 
   setExploreEnabled(value) {
     AppState.exploreEnabled = value;
+    if (this.cityMarkerGroup) {
+      this.cityMarkerGroup.visible = !!value;
+    }
+    if (!value) {
+      this.clearCenteredCity();
+    }
+    this.requestRender();
+  },
+
+  focusRandomCity() {
+    if (this.cityMarkerMeshes.length === 0) return null;
+    const marker = this.cityMarkerMeshes[Math.floor(Math.random() * this.cityMarkerMeshes.length)];
+    this.focusCityMarker(marker);
+    const city = marker.userData.city || null;
+    if (city) {
+      this.reticleActivePlace = String(city.cityId);
+      if (this.onPlaceChangeCallback) this.onPlaceChangeCallback(city);
+    }
+    return city;
   },
 
   onReticlePlaceChange(callback) {
     this.onPlaceChangeCallback = callback;
+  },
+
+  onReticleCityPreview(callback) {
+    this.onPreviewCityCallback = callback;
+  },
+
+  onReticleCityEnter(callback) {
+    this.onEnterCityCallback = callback;
+  },
+
+  onReticleDragStart(callback) {
+    this.onReticleDragStartCallback = callback;
   },
 
   adaptHighQualityPixelRatio(now) {
@@ -425,56 +586,239 @@ window.GlobeController = {
   },
 
   updateReticleChat(now) {
-    if (!AppState.exploreEnabled || !AppState.chatEnabled || this.cityMarkerMeshes.length === 0) return;
-    if (now - this.lastReticleProbe < 90) return;
+    if (!AppState.exploreEnabled || this.cityMarkerMeshes.length === 0) return;
+    if (!this.isDragging) return;
+    this.updateReticlePreview(now);
+  },
+
+  updateReticlePreview(now) {
+    if (!AppState.exploreEnabled || this.cityMarkerMeshes.length === 0) return;
+    if (now - this.lastReticleProbe < 60) return;
     this.lastReticleProbe = now;
 
-    this.reticleRaycaster.setFromCamera(this.reticleNdc, this.camera);
-    const hits = this.reticleRaycaster.intersectObjects(this.cityMarkerMeshes);
-    if (hits.length === 0) return;
+    const hit = this.getReticleCityHit();
+    if (!hit) {
+      this.previewCityId = '';
+      this.clearCenteredCity();
+      return;
+    }
 
-    const placeKey = hits[0].object.userData.placeKey;
-    if (!placeKey || placeKey === this.reticleActivePlace) return;
-    this.reticleActivePlace = placeKey;
-    
-    if (this.onPlaceChangeCallback) {
-      this.onPlaceChangeCallback(placeKey);
+    this.setMarkerFocus(hit.marker);
+    const city = hit.marker.userData.city;
+    if (!city || String(city.cityId) === this.previewCityId) return;
+    this.previewCityId = String(city.cityId);
+    if (this.onPreviewCityCallback) {
+      this.onPreviewCityCallback(city);
     }
   },
 
+  commitReticleCity() {
+    const hit = this.getReticleCityHit();
+    if (!hit) {
+      this.previewCityId = '';
+      this.clearCenteredCity();
+      return;
+    }
+
+    const city = hit.marker.userData.city;
+    if (!city) return;
+    this.snapReticleToMarker(hit.marker);
+    this.enterCityMarker(hit.marker, { centerGlobe: false });
+  },
+
+  getReticleCityHit() {
+    let bestHit = null;
+
+    this.cityMarkerMeshes.forEach(marker => {
+      const projected = this.projectMarker(marker, this.GROUP_ROT.x, this.GROUP_ROT.y);
+      if (!projected || projected.ndc.z < -1 || projected.ndc.z > 1) return;
+      if (projected.worldDir.dot(this.cameraDirection) < 0.18) return;
+      const distance = Math.hypot(projected.screenX - this.reticleX, projected.screenY - this.reticleY);
+      if (distance > this.reticleRadiusPx + this.markerHitRadiusPx) return;
+      if (!bestHit || distance < bestHit.distance) {
+        bestHit = { marker, distance, projected };
+      }
+    });
+
+    return bestHit;
+  },
+
+  centerMarkerInReticle(marker) {
+    const projected = this.projectMarker(marker, this.GROUP_ROT.x, this.GROUP_ROT.y);
+    if (!projected) return;
+
+    const centerX = this.viewportW / 2;
+    const centerY = this.viewportH / 2;
+    const currentDistance = (rotX, rotY) => {
+      const probe = this.projectMarker(marker, rotX, rotY);
+      if (!probe) return Number.POSITIVE_INFINITY;
+      return Math.hypot(probe.screenX - centerX, probe.screenY - centerY);
+    };
+
+    let bestX = this.GROUP_ROT.x;
+    let bestY = this.GROUP_ROT.y;
+    let bestDistance = currentDistance(bestX, bestY);
+    let step = 0.12;
+
+    for (let round = 0; round < 90 && bestDistance > 1.5; round += 1) {
+      let improved = false;
+      const candidates = [
+        [bestX + step, bestY],
+        [bestX - step, bestY],
+        [bestX, bestY + step],
+        [bestX, bestY - step],
+        [bestX + step, bestY + step],
+        [bestX + step, bestY - step],
+        [bestX - step, bestY + step],
+        [bestX - step, bestY - step]
+      ];
+
+      candidates.forEach(([rotX, rotY]) => {
+        const clampedX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotX));
+        const distance = currentDistance(clampedX, rotY);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestX = clampedX;
+          bestY = rotY;
+          improved = true;
+        }
+      });
+
+      if (!improved) step *= 0.55;
+      if (step < 0.0008) break;
+    }
+
+    this.GROUP_ROT.x = bestX;
+    this.GROUP_ROT.y = bestY;
+    this.applyRotation();
+  },
+
+  snapReticleToMarker(marker) {
+    this.centerMarkerInReticle(marker);
+  },
+
+  focusCityMarker(marker, options = {}) {
+    if (!marker) return;
+    const { centerGlobe = true } = options;
+    if (centerGlobe) this.centerMarkerInReticle(marker);
+    const city = marker.userData.city;
+    if (!city) return;
+    this.centeredCityId = String(city.cityId);
+    this.autoRotate = false;
+    this.velX = 0;
+    this.velY = 0;
+    this.setMarkerFocus(marker);
+    this.requestRender();
+  },
+
+  enterCityMarker(marker, options = {}) {
+    if (!marker) return;
+    this.focusCityMarker(marker, options);
+    const city = marker.userData.city;
+    if (!city) return;
+    this.previewCityId = '';
+    this.reticleActivePlace = String(city.cityId);
+
+    if (this.onEnterCityCallback) {
+      this.onEnterCityCallback(city);
+    } else if (this.onPlaceChangeCallback) {
+      this.onPlaceChangeCallback(city);
+    }
+  },
+
+  setMarkerFocus(activeMarker) {
+    this.cityMarkerMeshes.forEach(marker => {
+      marker.material.opacity = marker === activeMarker
+        ? this.cityMarkerActiveOpacity
+        : this.cityMarkerDimOpacity;
+    });
+    this.requestRender();
+  },
+
+  resetMarkerFocus() {
+    this.cityMarkerMeshes.forEach(marker => {
+      marker.material.opacity = this.cityMarkerBaseOpacity;
+    });
+    this.requestRender();
+  },
+
+  clearCenteredCity() {
+    this.centeredCityId = '';
+    this.reticleActivePlace = '';
+    this.resetMarkerFocus();
+  },
+
+  projectMarker(marker, rotX, rotY) {
+    const localPosition = marker.userData.localPosition;
+    if (!localPosition) return null;
+    this.markerProjectEuler.set(rotX, rotY, 0, 'XYZ');
+    const worldDir = this.markerProjectWorldDir.copy(localPosition).applyEuler(this.markerProjectEuler).normalize();
+    const ndc = this.markerProjectNdc.copy(worldDir).project(this.camera);
+    return {
+      ndc,
+      worldDir,
+      screenX: (ndc.x + 1) * 0.5 * this.viewportW,
+      screenY: (-ndc.y + 1) * 0.5 * this.viewportH
+    };
+  },
+
+  requestRender() {
+    this.sceneDirty = true;
+    if (document.hidden || this.isRenderingFrame || this.animationFrameId !== null) return;
+    this.animationFrameId = requestAnimationFrame(() => this.animate());
+  },
+
   animate() {
-    requestAnimationFrame(() => this.animate());
+    this.animationFrameId = null;
+    if (document.hidden) return;
+    this.isRenderingFrame = true;
     
     const now = performance.now();
     this.adaptHighQualityPixelRatio(now);
     this.updateReticleChat(now);
+    let changed = this.sceneDirty;
+    this.sceneDirty = false;
 
     if (this.isDragging) {
       const dx = this.pendingDrag.dx;
       const dy = this.pendingDrag.dy;
       this.pendingDrag.dx = 0;
       this.pendingDrag.dy = 0;
-      this.velY = dx * this.DRAG_SENSITIVITY;
-      this.velX = dy * this.DRAG_SENSITIVITY;
-      this.GROUP_ROT.x += this.velX;
-      this.GROUP_ROT.y += this.velY;
-      this.GROUP_ROT.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.GROUP_ROT.x));
-      this.applyRotation();
-    } else {
-      if (this.autoRotate && !AppState.stopAutoRotate) {
-        this.GROUP_ROT.y += 0.0018;
-      } else {
-        this.velX *= 0.94;
-        this.velY *= 0.94;
+      if (dx !== 0 || dy !== 0) {
+        this.velY = dx * this.DRAG_SENSITIVITY;
+        this.velX = dy * this.DRAG_SENSITIVITY;
         this.GROUP_ROT.x += this.velX;
         this.GROUP_ROT.y += this.velY;
         this.GROUP_ROT.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.GROUP_ROT.x));
+        this.applyRotation();
+        changed = true;
       }
-      this.applyRotation();
+    } else {
+      if (this.autoRotate && !AppState.stopAutoRotate) {
+        this.GROUP_ROT.y += 0.0018;
+        changed = true;
+      } else {
+        const hasVelocity = Math.abs(this.velX) > 0.00001 || Math.abs(this.velY) > 0.00001;
+        this.velX *= 0.94;
+        this.velY *= 0.94;
+        if (hasVelocity) {
+          this.GROUP_ROT.x += this.velX;
+          this.GROUP_ROT.y += this.velY;
+          this.GROUP_ROT.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.GROUP_ROT.x));
+          changed = true;
+        } else {
+          this.velX = 0;
+          this.velY = 0;
+        }
+      }
+      if (changed) this.applyRotation();
     }
 
     if (!AppState.cloudLayerDisabled) {
-      this.cloudDrift += 0.00035;
+      if (!this.centeredCityId && !AppState.stopAutoRotate) {
+        this.cloudDrift += 0.00035;
+        changed = true;
+      }
       this.cloudLayer.rotation.x = this.GROUP_ROT.x;
       this.cloudLayer.rotation.y = this.GROUP_ROT.y + this.cloudDrift;
     }
@@ -484,8 +828,22 @@ window.GlobeController = {
       this.camera.position.copy(this.cameraDirection).multiplyScalar(this.currentDistance);
       this.camera.lookAt(0, 0, 0);
       this.lastCameraDistance = this.currentDistance;
+      changed = true;
     }
 
-    this.renderer.render(this.scene, this.camera);
+    if (changed) {
+      this.renderer.render(this.scene, this.camera);
+    }
+
+    if (
+      this.isDragging ||
+      (this.autoRotate && !AppState.stopAutoRotate) ||
+      Math.abs(this.velX) > 0.00001 ||
+      Math.abs(this.velY) > 0.00001 ||
+      Math.abs(this.currentDistance - this.targetDistance) > 0.0005
+    ) {
+      this.animationFrameId = requestAnimationFrame(() => this.animate());
+    }
+    this.isRenderingFrame = false;
   }
 };

@@ -8,6 +8,7 @@ window.SettingsPanelController = {
     const settingTheme = document.getElementById('setting-theme');
     const settingQuality = document.getElementById('setting-quality');
     const settingLanguage = document.getElementById('setting-language');
+    const settingRandomCity = document.getElementById('setting-random-city');
 
     // Stop auto-rotate
     settingStopRotate.addEventListener('change', () => {
@@ -45,6 +46,12 @@ window.SettingsPanelController = {
     settingLanguage.addEventListener('change', () => {
       window.LanguageController.applyLanguage(settingLanguage.value);
     });
+
+    if (settingRandomCity) {
+      settingRandomCity.addEventListener('click', () => {
+        window.GlobeController.focusRandomCity();
+      });
+    }
 
     // Initialize defaults - match original behavior
     settingStopRotate.checked = false;

@@ -6,14 +6,16 @@ window.LanguageController = {
       unlocked: '拖动旋转 · 滚轮缩放 · 点击探索',
       searchPlaceholder: '搜索城市、国家或地址',
       feedback: '发送反馈',
-      privacy: '隐私政策'
+      privacy: '隐私政策',
+      randomCity: '随机城市'
     },
     en: {
       locked: 'Drag to rotate · Wheel to zoom',
       unlocked: 'Drag to rotate · Wheel to zoom · Click to explore',
       searchPlaceholder: 'Search city, country or address',
       feedback: 'Send feedback',
-      privacy: 'Privacy Policy'
+      privacy: 'Privacy Policy',
+      randomCity: 'Random city'
     }
   },
 
@@ -44,6 +46,14 @@ window.LanguageController = {
       settingPrivacy.textContent = text.privacy;
     }
 
+    const settingRandomCity = document.getElementById('setting-random-city');
+    if (settingRandomCity) {
+      settingRandomCity.textContent = text.randomCity;
+    }
+
     document.documentElement.lang = AppState.currentLanguage;
+    if (window.ChatPanelController && typeof window.ChatPanelController.updateLanguage === 'function') {
+      window.ChatPanelController.updateLanguage();
+    }
   }
 };

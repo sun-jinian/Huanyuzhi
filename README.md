@@ -50,7 +50,16 @@ It is not an open-source project at this stage.
 
 ## Running Locally
 
-You can run the project with a local static server.
+Install dependencies and run the local Node server:
+
+```bash
+npm install
+npm start
+```
+
+Then open `http://localhost:3000`.
+
+The server serves the frontend, loads city coordinates from MySQL, and provides the chat API/WebSocket endpoints.
 
 ## Copyright Notice
 

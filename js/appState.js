@@ -11,3 +11,12 @@ window.AppState = {
   atmosphereLayerDisabled: false,
   stopAutoRotate: false
 };
+
+window.AppConfig = {
+  apiBase: window.location.origin && window.location.port === '3000'
+    ? window.location.origin
+    : 'http://localhost:3000',
+  wsBase: window.location.origin && window.location.port === '3000'
+    ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
+    : 'ws://localhost:3000'
+};

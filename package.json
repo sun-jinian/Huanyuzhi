@@ -1,0 +1,13 @@
+{
+  "name": "touring-guide",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "mysql2": "^3.14.1",
+    "ws": "^8.18.2"
+  }
+}

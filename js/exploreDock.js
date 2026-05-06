@@ -158,7 +158,7 @@ window.ExploreDockController = {
     window.MockProfile.setCurrentPlaceKey(placeKey);
     
     this.dockCurrentAddress.textContent = place.address;
-    this.dockCurrentRegion.textContent = place.region;
+    this.dockCurrentRegion.textContent = '';
     this.renderList(this.dockFoodList, place.food);
     this.renderList(this.dockSightsList, place.sights);
     this.renderList(this.dockStaysList, place.stays);
