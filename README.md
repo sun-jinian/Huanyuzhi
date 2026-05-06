@@ -1,8 +1,7 @@
 # 寰宇志 · World Culture Map
+寰宇志 is a cultural travel map where you explore a 3D Earth, browse city guides, and chat with others in location-based rooms — all wrapped in an ink-wash UI.
 
-寰宇志是一个交互式世界文化地图项目。用户可以通过旋转 3D 地球仪，探索不同地区的饮食、景点、住宿与文化信息。
-
-项目目前处于开发阶段，主要用于前端交互、3D 地球、探索面板、收藏列表、搜索面板和聊天室界面的原型开发。
+> ⚠️ This project is currently under active development. Features may be incomplete, broken, or subject to change without notice.
 
 ---
 
