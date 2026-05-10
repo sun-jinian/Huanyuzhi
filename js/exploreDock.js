@@ -105,6 +105,12 @@ window.ExploreDockController = {
     this.setBrowserDrawerState('active extended will-extend');
     this.dockBackBtn.setAttribute('aria-expanded', 'true');
     this.setDockTab(tab);
+
+    requestAnimationFrame(() => {
+      if (this.dockOpen && this.activeDockTab === tab) {
+        this.setBrowserDrawerState('active extended');
+      }
+    });
   },
 
   close() {
@@ -112,8 +118,9 @@ window.ExploreDockController = {
     if ((!this.dockOpen && this.activeDockTab === null) || drawerState.includes('will-collapse')) return;
     
     this.dockOpen = false;
-    this.setBrowserDrawerState('inactive collapsed will-collapse');
+    this.setBrowserDrawerState('inactive will-collapse');
     this.dockBackBtn.setAttribute('aria-expanded', 'false');
+    this.dockTabButtons.forEach(btn => btn.classList.remove('is-active'));
 
     const durationRaw = getComputedStyle(this.dockMain).getPropertyValue('--dock-drawer-duration').trim();
     const durationMs = durationRaw.endsWith('ms')
@@ -283,9 +290,6 @@ window.ExploreDockController = {
     this.dockTabButtons.forEach(btn => {
       btn.classList.toggle('is-active', this.dockOpen && btn.dataset.tab === tab);
     });
-    if (tab === 'xun') {
-      this.dockSearchInput.focus();
-    }
   },
 
   setTitleVisible(visible) {

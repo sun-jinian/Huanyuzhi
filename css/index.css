@@ -332,11 +332,22 @@ nav a:hover::after {
   pointer-events: auto;
 }
 
+.dock-drawer-frame {
+  position: relative;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+}
+
 .dock-main {
   position: relative;
   width: 100%;
+  height: 100%;
   display: flex;
   flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   flex-direction: column;
   --dock-drawer-duration: 220ms;
@@ -345,7 +356,7 @@ nav a:hover::after {
   background: rgba(12, 19, 39, 0.88);
   visibility: hidden;
   pointer-events: none;
-  transform: translateY(calc(100% + 8px));
+  transform: translateY(100%);
   transition:
     transform var(--dock-drawer-duration) var(--dock-drawer-ease),
     visibility 0s linear 0s;
@@ -363,7 +374,7 @@ nav a:hover::after {
 
 .dock-main[data-drawer~="will-collapse"],
 .dock-main[data-drawer~="collapsed"] {
-  transform: translateY(calc(100% + 8px));
+  transform: translateY(100%);
   pointer-events: none;
   transition:
     transform var(--dock-drawer-duration) var(--dock-drawer-ease),
@@ -372,6 +383,7 @@ nav a:hover::after {
 
 .dock-main[data-drawer~="will-collapse"] {
   visibility: visible;
+  overflow: hidden;
 }
 
 .dock-header {
@@ -538,7 +550,8 @@ nav a:hover::after {
 
 .dock-main.tab-xun #dock-search-panel,
 .dock-main.tab-she #dock-settings-panel {
-  display: block;
+  display: flex;
+  flex-direction: column;
 }
 
 .dock-main.tab-cang #dock-cang-panel {
@@ -785,7 +798,8 @@ nav a:hover::after {
   background: rgba(8, 12, 20, 0.95);
   flex: 0 0 auto;
   position: relative;
-  z-index: 1;
+  z-index: 3;
+  overflow: hidden;
 }
 .dock-nav-btn {
   flex: 1 1 0;
