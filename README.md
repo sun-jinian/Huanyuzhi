@@ -1,5 +1,5 @@
-# 寰宇志 · World Culture Map
-寰宇志 is a cultural travel map where you explore a 3D Earth, browse city guides, and chat with others in location-based rooms — all wrapped in an ink-wash UI.
+# 寰宇志 · Yuanyuzhi
+Yuanyuzhi is a cultural travel map where you explore a 3D Earth, browse city guides, and chat with others in location-based rooms — all wrapped in an ink-wash UI.
 
 > ⚠️ This project is currently under active development. Features may be incomplete, broken, or subject to change without notice.
 
@@ -40,25 +40,6 @@ It is not an open-source project at this stage.
 - DOM APIs
 
 ---
-
-## Development Notes
-
-`mockProfile.js` is used as a development-only mock data source.
-
----
-
-## Running Locally
-
-Install dependencies and run the local Node server:
-
-```bash
-npm install
-npm start
-```
-
-Then open `http://localhost:3000`.
-
-The server serves the frontend, loads city coordinates from MySQL, and provides the chat API/WebSocket endpoints.
 
 ## Copyright Notice
 

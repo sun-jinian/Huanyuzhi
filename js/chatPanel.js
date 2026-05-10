@@ -163,7 +163,12 @@ window.ChatPanelController = {
   },
 
   getSenderName() {
-    const key = 'touringGuideSenderName';
+    const legacyKey = 'touringGuideSenderName';
+    const key = 'yuanyuzhiSenderName';
+    const legacy = localStorage.getItem(legacyKey);
+    if (localStorage.getItem(key) === null && legacy !== null) {
+      localStorage.setItem(key, legacy);
+    }
     const existing = localStorage.getItem(key);
     if (existing) return existing;
     const generated = `Guest-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -173,7 +178,7 @@ window.ChatPanelController = {
 
   async loadLatestMessages(cityId) {
     try {
-      const response = await fetch(`${window.AppConfig.apiBase}/api/chat/${encodeURIComponent(cityId)}/messages`, {
+      const response = await fetch(`${window.AppConfig.apiBase}/api/chat/${encodeURIComponent(cityId)}/messages?limit=10`, {
         headers: { Accept: 'application/json' }
       });
       if (!response.ok) throw new Error('Failed to load chat messages');
@@ -279,6 +284,12 @@ window.ChatPanelController = {
   formatMessageTime(value) {
     const date = value ? new Date(value) : new Date();
     if (Number.isNaN(date.getTime())) return '';
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleString([], {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 };

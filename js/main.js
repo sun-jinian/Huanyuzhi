@@ -28,15 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     window.ChatPanelController.open();
   });
 
-  window.GlobeController.onReticlePlaceChange((city) => {
-    if (AppState.chatDisabled) return;
-    const token = ++window.GlobeController.chatUpdateToken;
-    setTimeout(() => {
-      if (token !== window.GlobeController.chatUpdateToken) return;
-      if (AppState.chatDisabled) return;
-      window.ChatPanelController.setCity(city);
-      window.ChatPanelController.open();
-    }, 130);
+  window.GlobeController.onReticleCityClear(() => {
+    window.ChatPanelController.enterPreviewMode();
   });
 
   const heroBtn = document.querySelector('.hero-btn');

@@ -7,7 +7,8 @@ window.LanguageController = {
       searchPlaceholder: '搜索城市、国家或地址',
       feedback: '发送反馈',
       privacy: '隐私政策',
-      randomCity: '随机城市'
+      randomCity: '随机城市',
+      registerLink: '蓬门今始为君开'
     },
     en: {
       locked: 'Drag to rotate · Wheel to zoom',
@@ -15,7 +16,8 @@ window.LanguageController = {
       searchPlaceholder: 'Search city, country or address',
       feedback: 'Send feedback',
       privacy: 'Privacy Policy',
-      randomCity: 'Random city'
+      randomCity: 'Random city',
+      registerLink: 'Knock, Knock!'
     }
   },
 
@@ -49,6 +51,11 @@ window.LanguageController = {
     const settingRandomCity = document.getElementById('setting-random-city');
     if (settingRandomCity) {
       settingRandomCity.textContent = text.randomCity;
+    }
+
+    const dockRegisterLink = document.getElementById('dock-register-link');
+    if (dockRegisterLink) {
+      dockRegisterLink.textContent = text.registerLink;
     }
 
     document.documentElement.lang = AppState.currentLanguage;

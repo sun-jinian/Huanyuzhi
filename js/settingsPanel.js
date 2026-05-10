@@ -58,5 +58,13 @@ window.SettingsPanelController = {
     settingDisableChat.checked = false;
     settingDisableCloud.checked = false;
     settingDisableAtmosphere.checked = false;
+    this.renderAccountState();
+  },
+
+  renderAccountState() {
+    const signedIn = document.getElementById('dock-account-signed-in');
+    const loginPrompt = document.getElementById('dock-login-prompt');
+    if (signedIn) signedIn.hidden = !AppState.isLoggedIn;
+    if (loginPrompt) loginPrompt.hidden = AppState.isLoggedIn;
   }
 };

@@ -1,4 +1,16 @@
 // Shared application state
+const YuanyuzhiStorage = {
+  migrate(storage, oldKey, newKey) {
+    const existing = storage.getItem(newKey);
+    const legacy = storage.getItem(oldKey);
+    if (existing === null && legacy !== null) {
+      storage.setItem(newKey, legacy);
+    }
+  }
+};
+
+YuanyuzhiStorage.migrate(sessionStorage, 'touringGuideLoggedIn', 'yuanyuzhiLoggedIn');
+
 window.AppState = {
   currentLanguage: 'zh',
   exploreEnabled: false,
@@ -9,7 +21,8 @@ window.AppState = {
   chatDisabled: false,
   cloudLayerDisabled: false,
   atmosphereLayerDisabled: false,
-  stopAutoRotate: false
+  stopAutoRotate: false,
+  isLoggedIn: sessionStorage.getItem('yuanyuzhiLoggedIn') === 'true'
 };
 
 window.AppConfig = {

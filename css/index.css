@@ -646,7 +646,19 @@ nav a:hover::after {
 .dock-account-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
+  width: 100%;
+}
+.dock-account-signed-in,
+.dock-login-prompt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dock-account-signed-in[hidden],
+.dock-login-prompt[hidden] {
+  display: none;
 }
 .dock-account-avatar {
   width: 36px;
@@ -664,6 +676,28 @@ nav a:hover::after {
 .dock-account-name {
   color: #edf5ff;
   font-size: 14px;
+}
+.dock-login-prompt {
+  justify-content: flex-start;
+  width: 100%;
+  gap: 18px;
+}
+.dock-login-knocker {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+.dock-register-link {
+  color: #f7d277;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+}
+.dock-register-link:hover {
+  color: #ffe9a8;
+  text-decoration: underline;
 }
 .dock-search-results {
   list-style: none;
@@ -937,7 +971,9 @@ nav a:hover::after {
 }
 .chat-content {
   list-style: none;
-  display: grid;
+  flex-direction: column;
+  display: flex;
+  align-content: stretch;
   gap: 7px;
   flex: 1 1 auto;
   min-height: 0;
@@ -1282,6 +1318,7 @@ body.light-mode .dock-place-title,
 body.light-mode .dock-place-list li,
 body.light-mode .dock-setting-row,
 body.light-mode .dock-link-row,
+body.light-mode .dock-register-link,
 body.light-mode .dock-expand-title {
   color: #183154;
 }
@@ -1298,4 +1335,109 @@ body.light-mode .dock-search-input {
 button,
 a {
   cursor: pointer !important;
+}
+
+.register-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  overflow: auto;
+  background: #f6f7fb;
+  color: #172033;
+}
+.register-shell {
+  width: min(420px, calc(100vw - 32px));
+  display: grid;
+  gap: 14px;
+}
+.register-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.register-toolbar a {
+  color: #2c5fba;
+  font-size: 14px;
+  text-decoration: none;
+}
+.register-toolbar select {
+  min-height: 34px;
+  border: 1px solid #c9d2e3;
+  border-radius: 6px;
+  background: #fff;
+  color: #172033;
+  padding: 6px 10px;
+}
+.register-form {
+  width: 100%;
+  display: grid;
+  gap: 14px;
+  padding: 28px;
+  border: 1px solid #dde3ee;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgba(20, 34, 64, 0.12);
+}
+.register-knocker {
+  width: 116px;
+  height: 116px;
+  object-fit: contain;
+  justify-self: center;
+  margin-bottom: 2px;
+}
+.register-form h1 {
+  margin: 0;
+  color: #172033;
+  font-size: 24px;
+  text-align: center;
+}
+.register-form label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: #536070;
+}
+.register-form .is-required::after {
+  content: " *";
+  color: #d82d2d;
+  font-weight: 700;
+}
+.register-field-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.register-form input,
+.register-form select {
+  min-height: 38px;
+  border: 1px solid #c9d2e3;
+  border-radius: 6px;
+  background: #fff;
+  color: #172033;
+  padding: 8px 10px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.register-form input:focus,
+.register-form select:focus {
+  border-color: #2c5fba;
+  outline: 2px solid rgba(44, 95, 186, 0.14);
+}
+.register-form button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 6px;
+  background: #2c5fba;
+  color: #fff;
+  font-weight: 700;
+}
+.register-form button:hover {
+  background: #244f9c;
+}
+@media (max-width: 520px) {
+  .register-field-grid {
+    grid-template-columns: 1fr;
+  }
 }

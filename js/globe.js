@@ -47,6 +47,7 @@ window.GlobeController = {
   lowFpsStreak: 0,
   highFpsStreak: 0,
   QUALITY_PIXEL_CAP: { low: 0.9, medium: 1.25, high: 1.6 },
+  RETICLE_RELEASE_CENTER_DELAY_MS: 500,
   DRAG_SENSITIVITY: 0.002,
   
   // Sizes
@@ -77,6 +78,7 @@ window.GlobeController = {
   onPlaceChangeCallback: null,
   onPreviewCityCallback: null,
   onEnterCityCallback: null,
+  onClearCityCallback: null,
   onReticleDragStartCallback: null,
 
   init() {
@@ -240,7 +242,7 @@ window.GlobeController = {
   },
 
   renderCityMarkers(cities) {
-    const markerGeometry = new THREE.CircleGeometry(0.0038, 12);
+    const markerGeometry = new THREE.CircleGeometry(0.0020, 12);
     const makeMarkerMaterial = () => new THREE.MeshBasicMaterial({
       color: 0x00d287,
       transparent: true,
@@ -337,14 +339,14 @@ window.GlobeController = {
   scheduleReticleReleaseCenter() {
     this.cancelReticleReleaseCenter();
     if (!AppState.exploreEnabled || this.cityMarkerMeshes.length === 0) {
-      this.clearCenteredCity();
+      this.clearCenteredCity({ notify: true });
       return;
     }
 
     const hit = this.getReticleCityHit();
     if (!hit) {
       this.previewCityId = '';
-      this.clearCenteredCity();
+      this.clearCenteredCity({ notify: true });
       return;
     }
 
@@ -353,8 +355,15 @@ window.GlobeController = {
       this.reticleReleaseCenterTimer = null;
       if (this.isDragging || !AppState.exploreEnabled) return;
 
+      const latestHit = this.getReticleCityHit();
+      if (!latestHit || latestHit.marker !== markerToCenter) {
+        this.previewCityId = '';
+        this.clearCenteredCity({ notify: true });
+        return;
+      }
+
       this.enterCityMarker(markerToCenter);
-    }, 500);
+    }, this.RETICLE_RELEASE_CENTER_DELAY_MS);
   },
 
   setupZoom() {
@@ -526,12 +535,8 @@ window.GlobeController = {
   focusRandomCity() {
     if (this.cityMarkerMeshes.length === 0) return null;
     const marker = this.cityMarkerMeshes[Math.floor(Math.random() * this.cityMarkerMeshes.length)];
-    this.focusCityMarker(marker);
+    this.enterCityMarker(marker);
     const city = marker.userData.city || null;
-    if (city) {
-      this.reticleActivePlace = String(city.cityId);
-      if (this.onPlaceChangeCallback) this.onPlaceChangeCallback(city);
-    }
     return city;
   },
 
@@ -545,6 +550,10 @@ window.GlobeController = {
 
   onReticleCityEnter(callback) {
     this.onEnterCityCallback = callback;
+  },
+
+  onReticleCityClear(callback) {
+    this.onClearCityCallback = callback;
   },
 
   onReticleDragStart(callback) {
@@ -599,7 +608,7 @@ window.GlobeController = {
     const hit = this.getReticleCityHit();
     if (!hit) {
       this.previewCityId = '';
-      this.clearCenteredCity();
+      this.clearCenteredCity({ notify: true });
       return;
     }
 
@@ -616,7 +625,7 @@ window.GlobeController = {
     const hit = this.getReticleCityHit();
     if (!hit) {
       this.previewCityId = '';
-      this.clearCenteredCity();
+      this.clearCenteredCity({ notify: true });
       return;
     }
 
@@ -742,10 +751,13 @@ window.GlobeController = {
     this.requestRender();
   },
 
-  clearCenteredCity() {
+  clearCenteredCity(options = {}) {
     this.centeredCityId = '';
     this.reticleActivePlace = '';
     this.resetMarkerFocus();
+    if (options.notify && this.onClearCityCallback) {
+      this.onClearCityCallback();
+    }
   },
 
   projectMarker(marker, rotX, rotY) {
