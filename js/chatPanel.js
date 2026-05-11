@@ -139,7 +139,7 @@ window.ChatPanelController = {
   updateTitle() {
     if (!this.chatPanelTitle || !this.activeCity) return;
     const cityName = this.getCityName(this.activeCity);
-    this.chatPanelTitle.textContent = `${cityName} 聊天室`;
+    this.chatPanelTitle.textContent = `${cityName} `;
   },
 
   getCityName(city) {

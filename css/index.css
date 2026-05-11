@@ -701,6 +701,22 @@ nav a:hover::after {
   object-fit: contain;
   flex: 0 0 auto;
 }
+.dock-login-links {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+}
+.dock-login-link {
+  border: 0;
+  background: transparent;
+  color: #f7d277;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0;
+  text-align: center;
+  text-decoration: none;
+}
 .dock-register-link {
   color: #f7d277;
   font-size: 14px;
@@ -709,6 +725,10 @@ nav a:hover::after {
   text-align: center;
 }
 .dock-register-link:hover {
+  color: #ffe9a8;
+  text-decoration: underline;
+}
+.dock-login-link:hover {
   color: #ffe9a8;
   text-decoration: underline;
 }
@@ -734,6 +754,124 @@ nav a:hover::after {
 .dock-settings-panel {
   padding: 12px 14px;
   overflow-y: auto;
+}
+.dock-login-view {
+  min-height: 100%;
+}
+.dock-login-back {
+  border: 0;
+  background: transparent;
+  color: #f1f7ff;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: -4px 0 10px -4px;
+}
+.dock-login-back svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dock-login-back:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+.dock-login-form {
+  display: grid;
+  gap: 12px;
+}
+.dock-login-form label {
+  display: grid;
+  gap: 6px;
+  color: rgba(234, 242, 255, 0.92);
+  font-size: 13px;
+}
+.dock-login-form input[type="email"],
+.dock-login-form input[type="password"],
+.dock-password-field input {
+  width: 100%;
+  border: 1px solid rgba(160, 198, 255, 0.35);
+  border-radius: 6px;
+  background: rgba(4, 6, 12, 0.75);
+  color: #edf5ff;
+  padding: 9px 10px;
+  outline: none;
+  box-sizing: border-box;
+}
+.dock-password-field {
+  position: relative;
+  display: block;
+}
+.dock-password-field input {
+  padding-right: 38px;
+}
+.dock-password-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(227, 239, 255, 0.72);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.dock-password-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+.dock-password-toggle svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dock-password-toggle .password-eye-closed {
+  display: none;
+}
+.dock-password-toggle.is-visible .password-eye-open {
+  display: none;
+}
+.dock-password-toggle.is-visible .password-eye-closed {
+  display: block;
+}
+.dock-login-check {
+  display: flex !important;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: start;
+  gap: 8px !important;
+}
+.dock-login-check input {
+  margin: 0;
+}
+.dock-login-form button[type="submit"] {
+  width: 100%;
+  border: 1px solid rgba(0, 210, 135, 0.32);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: rgba(0, 210, 135, 0.1);
+  color: rgba(230, 255, 245, 0.94);
+  font: inherit;
+  font-size: 13px;
+}
+.dock-login-form button[type="submit"]:hover {
+  background: rgba(0, 210, 135, 0.16);
 }
 .dock-setting-group + .dock-setting-group {
   margin-top: 16px;

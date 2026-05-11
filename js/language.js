@@ -8,7 +8,13 @@ window.LanguageController = {
       feedback: '发送反馈',
       privacy: '隐私政策',
       randomCity: '随机城市',
-      registerLink: '蓬门今始为君开'
+      registerLink: '蓬门今始为君开',
+      loginLink: '花径不曾缘客扫',
+      loginEmail: '邮箱',
+      loginPassword: '密码',
+      rememberPassword: '记住密码',
+      loginSubmit: '登录',
+      chatroom: '聊天室'
     },
     en: {
       locked: 'Drag to rotate · Wheel to zoom',
@@ -17,7 +23,13 @@ window.LanguageController = {
       feedback: 'Send feedback',
       privacy: 'Privacy Policy',
       randomCity: 'Random city',
-      registerLink: 'Knock, Knock!'
+      registerLink: 'my humble gate opens',
+      loginLink: 'For thee alone',
+      loginEmail: 'Email',
+      loginPassword: 'Password',
+      rememberPassword: 'Remember password',
+      loginSubmit: 'Log in',
+      chatroom: 'Chatroom'
     }
   },
 
@@ -56,6 +68,31 @@ window.LanguageController = {
     const dockRegisterLink = document.getElementById('dock-register-link');
     if (dockRegisterLink) {
       dockRegisterLink.textContent = text.registerLink;
+    }
+
+    const dockLoginLink = document.getElementById('dock-login-link');
+    if (dockLoginLink) {
+      dockLoginLink.textContent = text.loginLink;
+    }
+
+    const settingsLoginEmailLabel = document.getElementById('settings-login-email-label');
+    if (settingsLoginEmailLabel) {
+      settingsLoginEmailLabel.textContent = text.loginEmail;
+    }
+
+    const settingsLoginPasswordLabel = document.getElementById('settings-login-password-label');
+    if (settingsLoginPasswordLabel) {
+      settingsLoginPasswordLabel.textContent = text.loginPassword;
+    }
+
+    const settingsLoginRememberLabel = document.getElementById('settings-login-remember-label');
+    if (settingsLoginRememberLabel) {
+      settingsLoginRememberLabel.textContent = text.rememberPassword;
+    }
+
+    const settingsLoginSubmit = document.getElementById('settings-login-submit');
+    if (settingsLoginSubmit) {
+      settingsLoginSubmit.textContent = text.loginSubmit;
     }
 
     document.documentElement.lang = AppState.currentLanguage;
