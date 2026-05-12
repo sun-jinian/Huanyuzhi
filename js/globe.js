@@ -345,6 +345,7 @@ window.GlobeController = {
     this.scheduleReticleReleaseCenter();
     this.requestRender();
     setTimeout(() => {
+      if (this.centeredCityId) return;
       this.autoRotate = true;
       this.requestRender();
     }, 1500);
@@ -378,7 +379,9 @@ window.GlobeController = {
       const latestHit = this.getReticleCityHit();
       if (!latestHit || latestHit.marker !== markerToCenter) {
         this.previewCityId = '';
-        this.clearCenteredCity({ notify: true });
+        if (Math.abs(this.velX) <= 0.00001 && Math.abs(this.velY) <= 0.00001) {
+          this.clearCenteredCity({ notify: true });
+        }
         return;
       }
 
@@ -619,6 +622,23 @@ window.GlobeController = {
     if (!AppState.exploreEnabled || this.cityMarkerMeshes.length === 0) return;
     if (!this.isDragging) return;
     this.updateReticlePreview(now);
+  },
+
+  updateInertiaReticleLock(now) {
+    if (!AppState.exploreEnabled || this.cityMarkerMeshes.length === 0) return;
+    if (this.isDragging || this.centeredCityId || this.reticleReleaseCenterTimer) return;
+    if (this.autoRotate && !AppState.stopAutoRotate) return;
+    if (Math.abs(this.velX) <= 0.00001 && Math.abs(this.velY) <= 0.00001) return;
+    if (now - this.lastReticleProbe < 60) return;
+
+    const hit = this.getReticleCityHit();
+    if (!hit) return;
+
+    this.lastReticleProbe = now;
+    this.setMarkerFocus(hit.marker);
+    const city = hit.marker.userData.city;
+    if (city) this.previewCityId = String(city.cityId);
+    this.scheduleReticleReleaseCenter();
   },
 
   updateReticlePreview(now) {
@@ -897,6 +917,7 @@ window.GlobeController = {
         }
       }
       if (changed) this.applyRotation();
+      this.updateInertiaReticleLock(now);
     }
 
     if (!AppState.cloudLayerDisabled) {
