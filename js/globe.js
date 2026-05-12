@@ -22,6 +22,7 @@ window.GlobeController = {
   reticleY: window.innerHeight / 2,
   reticleRadiusPx: 35,
   markerHitRadiusPx: 5,
+  markerClickRadiusPx: 12,
   previewCityId: '',
   targetDistance: 3.2,
   currentDistance: 3.2,
@@ -288,6 +289,13 @@ window.GlobeController = {
     canvas.addEventListener('pointerdown', e => {
       if (e.pointerType !== 'mouse' || e.button !== 0) return;
       e.preventDefault();
+      const clickMarker = this.getMarkerAtScreenPoint(e.clientX, e.clientY);
+      if (clickMarker) {
+        this.cancelReticleReleaseCenter();
+        this.enterCityMarker(clickMarker);
+        return;
+      }
+
       this.isDragging = true;
       this.activePointerId = e.pointerId;
       canvas.setPointerCapture(e.pointerId);
@@ -300,10 +308,19 @@ window.GlobeController = {
     });
 
     canvas.addEventListener('pointermove', e => {
-      if (!this.isDragging || e.pointerId !== this.activePointerId) return;
+      if (!this.isDragging) {
+        canvas.style.cursor = this.getMarkerAtScreenPoint(e.clientX, e.clientY) ? 'pointer' : 'grab';
+        return;
+      }
+      if (e.pointerId !== this.activePointerId) return;
+      canvas.style.cursor = 'grabbing';
       this.pendingDrag.dx += e.movementX;
       this.pendingDrag.dy += e.movementY;
       this.requestRender();
+    });
+
+    canvas.addEventListener('pointerleave', () => {
+      if (!this.isDragging) canvas.style.cursor = 'grab';
     });
 
     canvas.addEventListener('pointerup', e => {
@@ -321,6 +338,9 @@ window.GlobeController = {
     this.activePointerId = null;
     this.pendingDrag.dx = 0;
     this.pendingDrag.dy = 0;
+    const canvas = document.getElementById('globe-canvas');
+    if (canvas) canvas.style.cursor = 'grab';
+
     this.dragReleaseAt = performance.now();
     this.scheduleReticleReleaseCenter();
     this.requestRender();
@@ -534,6 +554,7 @@ window.GlobeController = {
 
   focusRandomCity() {
     if (this.cityMarkerMeshes.length === 0) return null;
+    this.cancelReticleReleaseCenter();
     const marker = this.cityMarkerMeshes[Math.floor(Math.random() * this.cityMarkerMeshes.length)];
     this.enterCityMarker(marker);
     const city = marker.userData.city || null;
@@ -652,22 +673,74 @@ window.GlobeController = {
     return bestHit;
   },
 
+  getMarkerAtScreenPoint(screenX, screenY) {
+    if (!AppState.exploreEnabled || this.cityMarkerMeshes.length === 0) return null;
+
+    let bestHit = null;
+    this.cityMarkerMeshes.forEach(marker => {
+      const projected = this.projectMarker(marker, this.GROUP_ROT.x, this.GROUP_ROT.y);
+      if (!projected || projected.ndc.z < -1 || projected.ndc.z > 1) return;
+      if (projected.worldDir.dot(this.cameraDirection) < 0.18) return;
+
+      const distance = Math.hypot(projected.screenX - screenX, projected.screenY - screenY);
+      if (distance > this.markerClickRadiusPx) return;
+      if (!bestHit || distance < bestHit.distance) {
+        bestHit = { marker, distance };
+      }
+    });
+
+    return bestHit ? bestHit.marker : null;
+  },
+
   centerMarkerInReticle(marker) {
-    const projected = this.projectMarker(marker, this.GROUP_ROT.x, this.GROUP_ROT.y);
-    if (!projected) return;
+    if (!marker || !marker.userData.localPosition) return;
 
     const centerX = this.viewportW / 2;
     const centerY = this.viewportH / 2;
     const currentDistance = (rotX, rotY) => {
       const probe = this.projectMarker(marker, rotX, rotY);
       if (!probe) return Number.POSITIVE_INFINITY;
+      if (probe.ndc.z < -1 || probe.ndc.z > 1) return Number.POSITIVE_INFINITY;
+      if (probe.worldDir.dot(this.cameraDirection) < 0.18) return Number.POSITIVE_INFINITY;
       return Math.hypot(probe.screenX - centerX, probe.screenY - centerY);
     };
 
+    const clampX = value => Math.max(-Math.PI / 2, Math.min(Math.PI / 2, value));
+    const normalizeY = value => {
+      let normalized = value;
+      while (normalized > Math.PI) normalized -= Math.PI * 2;
+      while (normalized < -Math.PI) normalized += Math.PI * 2;
+      return normalized;
+    };
+    const seeds = [
+      [this.GROUP_ROT.x, this.GROUP_ROT.y],
+      [-Math.PI / 2, this.GROUP_ROT.y],
+      [-Math.PI / 4, this.GROUP_ROT.y],
+      [0, this.GROUP_ROT.y],
+      [Math.PI / 4, this.GROUP_ROT.y],
+      [Math.PI / 2, this.GROUP_ROT.y]
+    ];
+
+    for (let i = 0; i < 16; i += 1) {
+      const rotY = this.GROUP_ROT.y + (i / 16) * Math.PI * 2;
+      seeds.push([-Math.PI / 2, rotY], [-Math.PI / 4, rotY], [0, rotY], [Math.PI / 4, rotY], [Math.PI / 2, rotY]);
+    }
+
     let bestX = this.GROUP_ROT.x;
     let bestY = this.GROUP_ROT.y;
-    let bestDistance = currentDistance(bestX, bestY);
-    let step = 0.12;
+    let bestDistance = Number.POSITIVE_INFINITY;
+
+    seeds.forEach(([rotX, rotY]) => {
+      const clampedX = clampX(rotX);
+      const distance = currentDistance(clampedX, rotY);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestX = clampedX;
+        bestY = rotY;
+      }
+    });
+
+    let step = 0.16;
 
     for (let round = 0; round < 90 && bestDistance > 1.5; round += 1) {
       let improved = false;
@@ -683,7 +756,7 @@ window.GlobeController = {
       ];
 
       candidates.forEach(([rotX, rotY]) => {
-        const clampedX = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotX));
+        const clampedX = clampX(rotX);
         const distance = currentDistance(clampedX, rotY);
         if (distance < bestDistance) {
           bestDistance = distance;
@@ -698,7 +771,7 @@ window.GlobeController = {
     }
 
     this.GROUP_ROT.x = bestX;
-    this.GROUP_ROT.y = bestY;
+    this.GROUP_ROT.y = normalizeY(bestY);
     this.applyRotation();
   },
 
@@ -709,13 +782,13 @@ window.GlobeController = {
   focusCityMarker(marker, options = {}) {
     if (!marker) return;
     const { centerGlobe = true } = options;
+    this.autoRotate = false;
+    this.velX = 0;
+    this.velY = 0;
     if (centerGlobe) this.centerMarkerInReticle(marker);
     const city = marker.userData.city;
     if (!city) return;
     this.centeredCityId = String(city.cityId);
-    this.autoRotate = false;
-    this.velX = 0;
-    this.velY = 0;
     this.setMarkerFocus(marker);
     this.requestRender();
   },
