@@ -1,5 +1,5 @@
-# 寰宇志 · Yuanyuzhi
-Yuanyuzhi is a cultural travel map where you explore a 3D Earth, browse city guides, and chat with others in location-based rooms — all wrapped in an ink-wash UI.
+# 寰宇志 · Huanyuzhi
+Huanyuzhi is a cultural travel map where you explore a 3D Earth, browse city guides, and chat with others in location-based rooms — all wrapped in an ink-wash UI.
 
 > ⚠️ This project is currently under active development. Features may be incomplete, broken, or subject to change without notice.
 
@@ -62,7 +62,7 @@ Import the included SQL dump into MySQL:
 mysql -u YOUR_DB_USER -p < database/db_yuanyuzhi.sql
 ```
 
-The SQL file creates the `db_yuanyuzhi` database and inserts the included records.
+The SQL file creates the `db_huanyuzhi` database and inserts the included records.
 
 ### Configure database connection
 
@@ -84,7 +84,7 @@ $env:DB_HOST="localhost"
 $env:DB_PORT="3306"
 $env:DB_USER="YOUR_DB_USER"
 $env:DB_PASSWORD="YOUR_DB_PASSWORD"
-$env:DB_NAME="db_yuanyuzhi"
+$env:DB_NAME="db_huanyuzhi"
 $env:PORT="3000"
 ```
 
