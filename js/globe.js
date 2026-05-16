@@ -28,7 +28,14 @@ window.GlobeController = {
   currentDistance: 3.2,
   lastCameraDistance: 3.2,
   cloudDrift: 0,
-  GROUP_ROT: { x: 0, y: 0 },
+  orientationQuat: null,
+  dragHorizontalQuat: null,
+  dragVerticalQuat: null,
+  autoRotateQuat: null,
+  centerDeltaQuat: null,
+  cloudDriftQuat: null,
+  cameraRight: null,
+  cameraUp: null,
   pendingDrag: { dx: 0, dy: 0 },
   reticleActivePlace: '',
   centeredCityId: '',
@@ -73,7 +80,6 @@ window.GlobeController = {
   mouse2: null,
   markerProjectWorldDir: null,
   markerProjectNdc: null,
-  markerProjectEuler: null,
   
   // Callback
   onPlaceChangeCallback: null,
@@ -123,6 +129,9 @@ window.GlobeController = {
     this.cameraDirection = new THREE.Vector3(1.0, 0.32, 3.0).normalize();
     this.camera.position.copy(this.cameraDirection).multiplyScalar(this.currentDistance);
     this.camera.lookAt(0, 0, 0);
+    this.camera.updateMatrixWorld();
+    this.cameraRight = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 0).normalize();
+    this.cameraUp = new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 1).normalize();
   },
 
   setupStars() {
@@ -152,6 +161,10 @@ window.GlobeController = {
     const globeGeo = new THREE.SphereGeometry(1, 64, 64);
     const textureLoader = new THREE.TextureLoader();
     const maxAnisotropy = this.renderer.capabilities.getMaxAnisotropy();
+    const loadTexture = (url, onLoad) => textureLoader.load(url, (texture) => {
+      if (onLoad) onLoad(texture);
+      this.requestRender();
+    });
 
     const prepareTexture = (tex) => {
       tex.encoding = THREE.sRGBEncoding;
@@ -162,16 +175,16 @@ window.GlobeController = {
     };
 
     const earthTexture = prepareTexture(
-      textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg')
+      loadTexture('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg', prepareTexture)
     );
-    const bumpTexture = textureLoader.load('https://threejs.org/examples/textures/planets/earth_bump_2048.jpg');
+    const bumpTexture = loadTexture('https://threejs.org/examples/textures/planets/earth_bump_2048.jpg');
     bumpTexture.anisotropy = maxAnisotropy;
-    const specTexture = textureLoader.load('https://threejs.org/examples/textures/planets/earth_specular_2048.jpg');
+    const specTexture = loadTexture('https://threejs.org/examples/textures/planets/earth_specular_2048.jpg');
     specTexture.anisotropy = maxAnisotropy;
     const lightsTexture = prepareTexture(
-      textureLoader.load('https://threejs.org/examples/textures/planets/earth_lights_2048.png')
+      loadTexture('https://threejs.org/examples/textures/planets/earth_lights_2048.png', prepareTexture)
     );
-    const cloudTexture = textureLoader.load('https://threejs.org/examples/textures/planets/earth_clouds_1024.png');
+    const cloudTexture = loadTexture('https://threejs.org/examples/textures/planets/earth_clouds_1024.png');
     cloudTexture.anisotropy = maxAnisotropy;
 
     const globeMat = new THREE.MeshPhongMaterial({
@@ -265,6 +278,10 @@ window.GlobeController = {
       this.cityMarkerGroup.add(marker);
       this.cityMarkerMeshes.push(marker);
     });
+    if (this.cityMarkerGroup) {
+      this.cityMarkerGroup.visible = !!AppState.exploreEnabled;
+    }
+    this.requestRender();
   },
 
   setupReticle() {
@@ -437,9 +454,14 @@ window.GlobeController = {
     this.mouse2 = new THREE.Vector2();
     this.reticleRaycaster = new THREE.Raycaster();
     this.reticleNdc = new THREE.Vector2(0, 0);
+    this.orientationQuat = new THREE.Quaternion();
+    this.dragHorizontalQuat = new THREE.Quaternion();
+    this.dragVerticalQuat = new THREE.Quaternion();
+    this.autoRotateQuat = new THREE.Quaternion();
+    this.centerDeltaQuat = new THREE.Quaternion();
+    this.cloudDriftQuat = new THREE.Quaternion();
     this.markerProjectWorldDir = new THREE.Vector3();
     this.markerProjectNdc = new THREE.Vector3();
-    this.markerProjectEuler = new THREE.Euler(0, 0, 0, 'XYZ');
   },
 
   setupResize() {
@@ -481,16 +503,36 @@ window.GlobeController = {
     );
   },
 
+  rotateGlobeByDrag(dx, dy) {
+    this.dragHorizontalQuat.setFromAxisAngle(this.cameraUp, dx * this.DRAG_SENSITIVITY);
+    this.dragVerticalQuat.setFromAxisAngle(this.cameraRight, dy * this.DRAG_SENSITIVITY);
+    this.orientationQuat.premultiply(this.dragHorizontalQuat);
+    this.orientationQuat.premultiply(this.dragVerticalQuat);
+    this.orientationQuat.normalize();
+  },
+
+  rotateGlobeByInertia() {
+    this.dragHorizontalQuat.setFromAxisAngle(this.cameraUp, this.velY);
+    this.dragVerticalQuat.setFromAxisAngle(this.cameraRight, this.velX);
+    this.orientationQuat.premultiply(this.dragHorizontalQuat);
+    this.orientationQuat.premultiply(this.dragVerticalQuat);
+    this.orientationQuat.normalize();
+  },
+
+  rotateGlobeAutomatically() {
+    this.autoRotateQuat.setFromAxisAngle(this.cameraUp, 0.0018);
+    this.orientationQuat.premultiply(this.autoRotateQuat);
+    this.orientationQuat.normalize();
+  },
+
   applyRotation() {
-    this.globe.rotation.x = this.GROUP_ROT.x;
-    this.globe.rotation.y = this.GROUP_ROT.y;
+    if (!this.orientationQuat) return;
+    this.globe.quaternion.copy(this.orientationQuat);
     if (this.cityMarkerGroup) {
-      this.cityMarkerGroup.rotation.x = this.GROUP_ROT.x;
-      this.cityMarkerGroup.rotation.y = this.GROUP_ROT.y;
+      this.cityMarkerGroup.quaternion.copy(this.orientationQuat);
     }
     this.allObjects.forEach(o => {
-      o.rotation.x = this.GROUP_ROT.x;
-      o.rotation.y = this.GROUP_ROT.y;
+      o.quaternion.copy(this.orientationQuat);
     });
   },
 
@@ -680,7 +722,7 @@ window.GlobeController = {
     let bestHit = null;
 
     this.cityMarkerMeshes.forEach(marker => {
-      const projected = this.projectMarker(marker, this.GROUP_ROT.x, this.GROUP_ROT.y);
+      const projected = this.projectMarker(marker);
       if (!projected || projected.ndc.z < -1 || projected.ndc.z > 1) return;
       if (projected.worldDir.dot(this.cameraDirection) < 0.18) return;
       const distance = Math.hypot(projected.screenX - this.reticleX, projected.screenY - this.reticleY);
@@ -698,7 +740,7 @@ window.GlobeController = {
 
     let bestHit = null;
     this.cityMarkerMeshes.forEach(marker => {
-      const projected = this.projectMarker(marker, this.GROUP_ROT.x, this.GROUP_ROT.y);
+      const projected = this.projectMarker(marker);
       if (!projected || projected.ndc.z < -1 || projected.ndc.z > 1) return;
       if (projected.worldDir.dot(this.cameraDirection) < 0.18) return;
 
@@ -715,83 +757,13 @@ window.GlobeController = {
   centerMarkerInReticle(marker) {
     if (!marker || !marker.userData.localPosition) return;
 
-    const centerX = this.viewportW / 2;
-    const centerY = this.viewportH / 2;
-    const currentDistance = (rotX, rotY) => {
-      const probe = this.projectMarker(marker, rotX, rotY);
-      if (!probe) return Number.POSITIVE_INFINITY;
-      if (probe.ndc.z < -1 || probe.ndc.z > 1) return Number.POSITIVE_INFINITY;
-      if (probe.worldDir.dot(this.cameraDirection) < 0.18) return Number.POSITIVE_INFINITY;
-      return Math.hypot(probe.screenX - centerX, probe.screenY - centerY);
-    };
-
-    const clampX = value => Math.max(-Math.PI / 2, Math.min(Math.PI / 2, value));
-    const normalizeY = value => {
-      let normalized = value;
-      while (normalized > Math.PI) normalized -= Math.PI * 2;
-      while (normalized < -Math.PI) normalized += Math.PI * 2;
-      return normalized;
-    };
-    const seeds = [
-      [this.GROUP_ROT.x, this.GROUP_ROT.y],
-      [-Math.PI / 2, this.GROUP_ROT.y],
-      [-Math.PI / 4, this.GROUP_ROT.y],
-      [0, this.GROUP_ROT.y],
-      [Math.PI / 4, this.GROUP_ROT.y],
-      [Math.PI / 2, this.GROUP_ROT.y]
-    ];
-
-    for (let i = 0; i < 16; i += 1) {
-      const rotY = this.GROUP_ROT.y + (i / 16) * Math.PI * 2;
-      seeds.push([-Math.PI / 2, rotY], [-Math.PI / 4, rotY], [0, rotY], [Math.PI / 4, rotY], [Math.PI / 2, rotY]);
-    }
-
-    let bestX = this.GROUP_ROT.x;
-    let bestY = this.GROUP_ROT.y;
-    let bestDistance = Number.POSITIVE_INFINITY;
-
-    seeds.forEach(([rotX, rotY]) => {
-      const clampedX = clampX(rotX);
-      const distance = currentDistance(clampedX, rotY);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestX = clampedX;
-        bestY = rotY;
-      }
-    });
-
-    let step = 0.16;
-
-    for (let round = 0; round < 90 && bestDistance > 1.5; round += 1) {
-      let improved = false;
-      const candidates = [
-        [bestX + step, bestY],
-        [bestX - step, bestY],
-        [bestX, bestY + step],
-        [bestX, bestY - step],
-        [bestX + step, bestY + step],
-        [bestX + step, bestY - step],
-        [bestX - step, bestY + step],
-        [bestX - step, bestY - step]
-      ];
-
-      candidates.forEach(([rotX, rotY]) => {
-        const clampedX = clampX(rotX);
-        const distance = currentDistance(clampedX, rotY);
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          bestX = clampedX;
-          bestY = rotY;
-          improved = true;
-        }
-      });
-
-      if (!improved) step *= 0.55;
-      if (step < 0.0008) break;
-    }
-
-    this.GROUP_ROT.x = bestX;
-    this.GROUP_ROT.y = normalizeY(bestY);
+    const worldDir = this.markerProjectWorldDir
+      .copy(marker.userData.localPosition)
+      .applyQuaternion(this.orientationQuat)
+      .normalize();
+    this.centerDeltaQuat.setFromUnitVectors(worldDir, this.cameraDirection);
+    this.orientationQuat.premultiply(this.centerDeltaQuat);
+    this.orientationQuat.normalize();
     this.applyRotation();
   },
 
@@ -853,11 +825,10 @@ window.GlobeController = {
     }
   },
 
-  projectMarker(marker, rotX, rotY) {
+  projectMarker(marker) {
     const localPosition = marker.userData.localPosition;
-    if (!localPosition) return null;
-    this.markerProjectEuler.set(rotX, rotY, 0, 'XYZ');
-    const worldDir = this.markerProjectWorldDir.copy(localPosition).applyEuler(this.markerProjectEuler).normalize();
+    if (!localPosition || !this.orientationQuat) return null;
+    const worldDir = this.markerProjectWorldDir.copy(localPosition).applyQuaternion(this.orientationQuat).normalize();
     const ndc = this.markerProjectNdc.copy(worldDir).project(this.camera);
     return {
       ndc,
@@ -892,28 +863,28 @@ window.GlobeController = {
       if (dx !== 0 || dy !== 0) {
         this.velY = dx * this.DRAG_SENSITIVITY;
         this.velX = dy * this.DRAG_SENSITIVITY;
-        this.GROUP_ROT.x += this.velX;
-        this.GROUP_ROT.y += this.velY;
-        this.GROUP_ROT.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.GROUP_ROT.x));
+        this.rotateGlobeByDrag(dx, dy);
         this.applyRotation();
         changed = true;
       }
     } else {
       if (this.autoRotate && !AppState.stopAutoRotate) {
-        this.GROUP_ROT.y += 0.0018;
+        this.rotateGlobeAutomatically();
         changed = true;
       } else {
         const hasVelocity = Math.abs(this.velX) > 0.00001 || Math.abs(this.velY) > 0.00001;
         this.velX *= 0.94;
         this.velY *= 0.94;
         if (hasVelocity) {
-          this.GROUP_ROT.x += this.velX;
-          this.GROUP_ROT.y += this.velY;
-          this.GROUP_ROT.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.GROUP_ROT.x));
+          this.rotateGlobeByInertia();
           changed = true;
         } else {
           this.velX = 0;
           this.velY = 0;
+          if (!this.centeredCityId && !this.reticleReleaseCenterTimer && !this.getReticleCityHit()) {
+            this.previewCityId = '';
+            this.clearCenteredCity({ notify: true });
+          }
         }
       }
       if (changed) this.applyRotation();
@@ -925,8 +896,8 @@ window.GlobeController = {
         this.cloudDrift += 0.00035;
         changed = true;
       }
-      this.cloudLayer.rotation.x = this.GROUP_ROT.x;
-      this.cloudLayer.rotation.y = this.GROUP_ROT.y + this.cloudDrift;
+      this.cloudDriftQuat.setFromAxisAngle(this.cameraUp, this.cloudDrift);
+      this.cloudLayer.quaternion.copy(this.orientationQuat).premultiply(this.cloudDriftQuat);
     }
 
     this.currentDistance = THREE.MathUtils.lerp(this.currentDistance, this.targetDistance, 0.14);
@@ -953,3 +924,4 @@ window.GlobeController = {
     this.isRenderingFrame = false;
   }
 };
+

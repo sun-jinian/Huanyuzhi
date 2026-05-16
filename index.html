@@ -34,7 +34,7 @@
     <div style="display:flex;align-items:center;gap:14px;">
       <div>
         <div class="logo-main">寰宇志</div>
-        <div class="logo-sub">YUANYUZHI</div>
+        <div class="logo-sub">HUANYUZHI</div>
       </div>
       <div class="logo-seal"><span>志</span></div>
     </div>
@@ -100,7 +100,8 @@
           <div class="dock-account-row">
             <div class="dock-account-signed-in" id="dock-account-signed-in" hidden>
               <div class="dock-account-avatar" aria-hidden="true">A</div>
-              <div class="dock-account-name">Account Name</div>
+              <a class="dock-account-name" href="account.html">Account Name</a>
+              <button class="dock-logout-btn" id="dock-logout-btn" type="button">退出</button>
             </div>
             <div class="dock-login-prompt" id="dock-login-prompt">
               <img class="dock-login-knocker" src="assets/knocker.png" alt="" aria-hidden="true">
@@ -196,12 +197,12 @@
           <form class="dock-login-form" id="settings-login-form">
             <label>
               <span id="settings-login-email-label">邮箱</span>
-              <input id="settings-login-email" type="email" autocomplete="email" required>
+              <input id="settings-login-email" name="email" type="email" autocomplete="email" pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
             </label>
             <label>
               <span id="settings-login-password-label">密码</span>
               <span class="dock-password-field">
-                <input id="settings-login-password" type="password" autocomplete="current-password" required>
+                <input id="settings-login-password" name="password" type="password" autocomplete="current-password" required>
                 <button id="settings-login-password-toggle" class="dock-password-toggle" type="button" aria-label="显示密码">
                   <svg class="password-eye-open" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"></path>

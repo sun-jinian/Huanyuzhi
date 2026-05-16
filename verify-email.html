@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>邮箱验证 · 寰宇志</title>
+<link href="css/index.css" rel="stylesheet">
+</head>
+<body class="register-page">
+  <main class="register-shell">
+    <div class="register-toolbar">
+      <a href="register.html" data-i18n="back">返回注册</a>
+      <select id="verify-language" aria-label="Language">
+        <option value="zh">中文</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+    <form class="register-form" id="verify-email-form">
+      <img class="register-knocker" src="assets/knocker.png" alt="">
+      <h1 data-i18n="title">邮箱验证</h1>
+      <p class="register-note" id="verify-email-note">请输入发送到邮箱的验证码。</p>
+      <label>
+        <span class="is-required" data-i18n="verificationCode">验证码</span>
+        <input id="verify-email-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+      </label>
+      <p class="register-note" id="verify-email-status" aria-live="polite"></p>
+      <button type="submit" data-i18n="submit">验证邮箱</button>
+    </form>
+  </main>
+  <script src="js/verifyEmail.js"></script>
+</body>
+</html>

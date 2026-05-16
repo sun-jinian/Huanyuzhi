@@ -164,10 +164,15 @@ window.ChatPanelController = {
 
   getSenderName() {
     const legacyKey = 'touringGuideSenderName';
-    const key = 'yuanyuzhiSenderName';
+    const previousProjectKey = 'yuanyuzhiSenderName';
+    const key = 'huanyuzhiSenderName';
     const legacy = localStorage.getItem(legacyKey);
     if (localStorage.getItem(key) === null && legacy !== null) {
       localStorage.setItem(key, legacy);
+    }
+    const previousProjectValue = localStorage.getItem(previousProjectKey);
+    if (localStorage.getItem(key) === null && previousProjectValue !== null) {
+      localStorage.setItem(key, previousProjectValue);
     }
     const existing = localStorage.getItem(key);
     if (existing) return existing;

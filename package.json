@@ -1,14 +1,15 @@
 {
-  "name": "yuanyuzhi",
+  "name": "huanyuzhi",
   "version": "1.0.0",
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server/server.js"
   },
   "dependencies": {
     "argon2": "^0.44.0",
     "mysql2": "^3.14.1",
+    "resend": "^6.12.3",
     "ws": "^8.18.2"
   }
 }

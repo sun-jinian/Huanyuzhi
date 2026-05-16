@@ -1,5 +1,5 @@
 // Shared application state
-const YuanyuzhiStorage = {
+const HuanyuzhiStorage = {
   migrate(storage, oldKey, newKey) {
     const existing = storage.getItem(newKey);
     const legacy = storage.getItem(oldKey);
@@ -9,7 +9,13 @@ const YuanyuzhiStorage = {
   }
 };
 
-YuanyuzhiStorage.migrate(sessionStorage, 'touringGuideLoggedIn', 'yuanyuzhiLoggedIn');
+HuanyuzhiStorage.migrate(sessionStorage, 'touringGuideLoggedIn', 'huanyuzhiLoggedIn');
+HuanyuzhiStorage.migrate(sessionStorage, 'yuanyuzhiLoggedIn', 'huanyuzhiLoggedIn');
+HuanyuzhiStorage.migrate(sessionStorage, 'yuanyuzhiAccountEmail', 'huanyuzhiAccountEmail');
+HuanyuzhiStorage.migrate(sessionStorage, 'yuanyuzhiDirectExplore', 'huanyuzhiDirectExplore');
+HuanyuzhiStorage.migrate(localStorage, 'touringGuideLanguage', 'huanyuzhiLanguage');
+HuanyuzhiStorage.migrate(localStorage, 'yuanyuzhiLanguage', 'huanyuzhiLanguage');
+HuanyuzhiStorage.migrate(localStorage, 'yuanyuzhiRememberPassword', 'huanyuzhiRememberPassword');
 
 window.AppState = {
   currentLanguage: 'zh',
@@ -22,14 +28,21 @@ window.AppState = {
   cloudLayerDisabled: false,
   atmosphereLayerDisabled: false,
   stopAutoRotate: false,
-  isLoggedIn: sessionStorage.getItem('yuanyuzhiLoggedIn') === 'true'
+  isLoggedIn: sessionStorage.getItem('huanyuzhiLoggedIn') === 'true',
+  currentUser: null
 };
 
+try {
+  window.AppState.currentUser = JSON.parse(sessionStorage.getItem('huanyuzhiSessionUser') || 'null');
+} catch (error) {
+  window.AppState.currentUser = null;
+}
+
 window.AppConfig = {
-  apiBase: window.location.origin && window.location.port === '3000'
+  apiBase: window.location.protocol.startsWith('http')
     ? window.location.origin
     : 'http://localhost:3000',
-  wsBase: window.location.origin && window.location.port === '3000'
+  wsBase: window.location.protocol.startsWith('http')
     ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`
     : 'ws://localhost:3000'
 };

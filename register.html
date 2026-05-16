@@ -9,13 +9,13 @@
 <body class="register-page">
   <main class="register-shell">
     <div class="register-toolbar">
-      <a href="index.html" data-i18n="back">返回地图</a>
+      <a href="index.html" id="register-back-map" data-i18n="back">返回地图</a>
       <select id="register-language" aria-label="Language">
         <option value="zh">中文</option>
         <option value="en">English</option>
       </select>
     </div>
-    <form class="register-form">
+    <form class="register-form" id="register-form">
       <img class="register-knocker" src="assets/knocker.png" alt="">
       <h1 data-i18n="title">注册账号</h1>
       <label>
@@ -62,6 +62,7 @@
           <option value="" data-i18n="countryPlaceholder">选择国家/地区</option>
         </select>
       </label>
+      <p class="register-note" id="register-status" aria-live="polite"></p>
       <button type="submit" data-i18n="submit">创建账号</button>
     </form>
   </main>

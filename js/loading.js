@@ -4,6 +4,11 @@ window.LoadingController = {
     const loadingBar = document.getElementById('loading-bar');
     const loadingEl = document.getElementById('loading');
     if (!loadingBar || !loadingEl) return;
+    if (sessionStorage.getItem('huanyuzhiDirectExplore') === 'true') {
+      loadingEl.classList.add('hidden');
+      loadingEl.style.display = 'none';
+      return;
+    }
 
     // Loading progress bar animation
     let progress = 0;
