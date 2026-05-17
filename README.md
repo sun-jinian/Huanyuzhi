@@ -33,11 +33,14 @@ It is not an open-source project at this stage.
 
 ## Tech Stack
 
+- Next.js
+- React
 - HTML5
 - CSS3
 - JavaScript
 - Three.js
-- DOM APIs
+- MySQL
+- Resend
 
 
 ## Local Development
@@ -74,7 +77,9 @@ DB_PORT=3306
 DB_USER=YOUR_DB_USER
 DB_PASSWORD=YOUR_DB_PASSWORD
 DB_NAME=db_huanyuzhi
-PORT=3000
+RESEND_API_KEY=your_resend_api_key_here
+MAIL_FROM=Huanyuzhi <onboarding@resend.dev>
+ABLY_API_KEY=your_ably_api_key
 ```
 
 On PowerShell, set them for the current terminal session like this:
@@ -85,13 +90,15 @@ $env:DB_PORT="3306"
 $env:DB_USER="YOUR_DB_USER"
 $env:DB_PASSWORD="YOUR_DB_PASSWORD"
 $env:DB_NAME="db_huanyuzhi"
-$env:PORT="3000"
+$env:RESEND_API_KEY="your_resend_api_key_here"
+$env:MAIL_FROM="Huanyuzhi <onboarding@resend.dev>"
+$env:ABLY_API_KEY="your_ably_api_key"
 ```
 
-### Run the local server
+### Run the local Next.js server
 
 ```bash
-node server/server.js
+npm run dev
 ```
 
 Then open:
@@ -99,6 +106,43 @@ Then open:
 ```text
 http://localhost:3000
 ```
+
+### Build for Vercel
+
+```bash
+npm run build
+```
+
+Vercel must be configured with these environment variables:
+
+```text
+DB_HOST
+DB_PORT
+DB_USER
+DB_PASSWORD
+DB_NAME
+RESEND_API_KEY
+MAIL_FROM
+ABLY_API_KEY
+```
+
+Deploy steps:
+
+1. Push this repository to GitHub.
+2. Import the repository in Vercel as a Next.js project.
+3. Add the Aiven MySQL values to the `DB_*` environment variables.
+4. Add `RESEND_API_KEY`, `MAIL_FROM`, and `ABLY_API_KEY`.
+5. Redeploy after adding or changing environment variables.
+
+### Ably realtime chat
+
+Create an Ably app, copy its API key, and set it as:
+
+```text
+ABLY_API_KEY
+```
+
+The browser requests `/api/ably/token`, subscribes to city chat channels, and the server publishes new database-backed chat messages to Ably after they are inserted.
 
 ---
 

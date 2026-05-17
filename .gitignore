@@ -1,4 +1,6 @@
 node_modules/
+.next/
 .env
 scripts/server.js
 scripts/set-user-password.js
+.cache/

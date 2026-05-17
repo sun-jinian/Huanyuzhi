@@ -9,6 +9,10 @@ window.ChatPanelController = {
     this.activeCity = null;
     this.activeMode = '';
     this.socket = null;
+    this.pollTimer = null;
+    this.ablyClient = null;
+    this.ablyChannel = null;
+    this.ablyHandler = null;
     this.messageIds = new Set();
     this.senderName = this.getSenderName();
 
@@ -197,20 +201,47 @@ window.ChatPanelController = {
   connectCitySocket(cityId) {
     this.disconnectSocket();
 
-    this.socket = new WebSocket(`${window.AppConfig.wsBase}/ws/chat?cityId=${encodeURIComponent(cityId)}`);
-    this.socket.addEventListener('message', event => {
+    if (window.Ably) {
       try {
-        const payload = JSON.parse(event.data);
-        if (payload.type === 'message' && payload.message) {
-          this.appendMessage(payload.message);
-        }
+        this.ablyClient = this.ablyClient || new window.Ably.Realtime({
+          authUrl: `${window.AppConfig.apiBase}/api/ably/token`
+        });
+        this.ablyChannel = this.ablyClient.channels.get(`city:${cityId}:chat`);
+        this.ablyHandler = message => {
+          if (message && message.name === 'message' && message.data) {
+            this.appendMessage(message.data);
+          }
+        };
+        this.ablyChannel.subscribe('message', this.ablyHandler);
+        return;
       } catch (error) {
-        this.renderSystemMessage('收到了一条无法解析的聊天室消息');
+        this.startPolling();
+        return;
       }
-    });
+    }
+
+    this.startPolling();
+  },
+
+  startPolling() {
+    if (this.pollTimer) return;
+    this.pollTimer = window.setInterval(() => {
+      if (this.activeCity && this.activeMode === 'entered') {
+        this.loadLatestMessages(this.activeCity.cityId);
+      }
+    }, 4000);
   },
 
   disconnectSocket() {
+    if (this.ablyChannel && this.ablyHandler) {
+      this.ablyChannel.unsubscribe('message', this.ablyHandler);
+    }
+    this.ablyChannel = null;
+    this.ablyHandler = null;
+    if (this.pollTimer) {
+      window.clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
     if (!this.socket) return;
     this.socket.close();
     this.socket = null;
@@ -245,6 +276,7 @@ window.ChatPanelController = {
         const data = await response.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to send message');
       }
+      await this.loadLatestMessages(this.activeCity.cityId);
     } catch (error) {
       this.renderSystemMessage('消息发送失败，请稍后再试');
     }
