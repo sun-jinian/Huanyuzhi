@@ -78,6 +78,8 @@ DB_USER=YOUR_DB_USER
 DB_PASSWORD=YOUR_DB_PASSWORD
 DB_NAME=db_huanyuzhi
 DB_SSL=true
+DB_SSL_CA_PATH=E:\env\TouringGuide\ca.pem
+SKIP_SCHEMA_MIGRATIONS=true
 RESEND_API_KEY=your_resend_api_key_here
 MAIL_FROM=Huanyuzhi <onboarding@resend.dev>
 ABLY_API_KEY=your_ably_api_key
@@ -92,9 +94,25 @@ $env:DB_USER="YOUR_DB_USER"
 $env:DB_PASSWORD="YOUR_DB_PASSWORD"
 $env:DB_NAME="db_huanyuzhi"
 $env:DB_SSL="true"
+$env:DB_SSL_CA_PATH="E:\env\TouringGuide\ca.pem"
 $env:RESEND_API_KEY="your_resend_api_key_here"
 $env:MAIL_FROM="Huanyuzhi <onboarding@resend.dev>"
 $env:ABLY_API_KEY="your_ably_api_key"
+```
+
+Alternatively, local development can load an env file from outside the repository:
+
+```powershell
+$env:HUANYUZHI_ENV_PATH="E:\env\TouringGuide\.env"
+npm run dev
+```
+
+The loader refuses to read env files from inside the project directory and does not print secret values.
+
+For Aiven MySQL, download the CA certificate from the Aiven console. In local development, either put the certificate text in `DB_SSL_CA` with escaped newlines, or point to the certificate file:
+
+```text
+DB_SSL_CA_PATH=E:\env\TouringGuide\ca.pem
 ```
 
 ### Run the local Next.js server
@@ -124,6 +142,9 @@ DB_USER
 DB_PASSWORD
 DB_NAME
 DB_SSL
+DB_SSL_CA
+DB_SSL_CA_PATH
+SKIP_SCHEMA_MIGRATIONS
 RESEND_API_KEY
 MAIL_FROM
 ABLY_API_KEY
@@ -134,8 +155,9 @@ Deploy steps:
 1. Push this repository to GitHub.
 2. Import the repository in Vercel as a Next.js project.
 3. Add the Aiven MySQL values to the `DB_*` environment variables. Set `DB_SSL=true` for Aiven.
-4. Add `RESEND_API_KEY`, `MAIL_FROM`, and `ABLY_API_KEY`.
-5. Redeploy after adding or changing environment variables.
+4. Set `SKIP_SCHEMA_MIGRATIONS=true` on Vercel after importing `database/db_huanyuzhi.sql` into Aiven.
+5. Add `RESEND_API_KEY`, `MAIL_FROM`, and `ABLY_API_KEY`.
+6. Redeploy after adding or changing environment variables.
 
 ### Ably realtime chat
 
