@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh" data-browser-drawer="inactive collapsed">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>寰宇志 · 世界文化地图</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+<link href="css/index.css" rel="stylesheet">
+
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="loading-title">寰宇志</div>
+  <div class="loading-bar-wrap"><div class="loading-bar" id="loading-bar"></div></div>
+  <div class="loading-sub">正在展开世界地图</div>
+</div>
+
+<!-- Globe -->
+<canvas id="globe-canvas"></canvas>
+<div id="screen-reticle" aria-hidden="true">
+</div>
+
+<!-- Overlays -->
+<div class="ink-overlay"></div>
+<div class="brush-top"></div>
+<div class="brush-bottom"></div>
+<div class="ink-stroke-left"></div>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div style="display:flex;align-items:center;gap:14px;">
+      <div>
+        <div class="logo-main">寰宇志</div>
+        <div class="logo-sub">HUANYUZHI</div>
+      </div>
+      <div class="logo-seal"><span>志</span></div>
+    </div>
+  </div>
+  <nav>
+    <a href="#">探索地图</a>
+    <a href="#">文化故事</a>
+    <a href="#">关于我们</a>
+  </nav>
+</header>
+
+<!-- Hero text -->
+<div class="hero-text">
+  <div class="hero-tagline">拨动地球，探索文明</div>
+  <div class="hero-divider"></div>
+  <div class="hero-title">世界的<br>每一处<br>皆有故事</div>
+  <div class="hero-desc">旋转地球仪，点击任意国家<br>探索当地的饮食、风景与文化</div>
+  <a href="#" class="hero-btn">
+    开始探索
+    <span class="hero-btn-arrow">→</span>
+  </a>
+</div>
+
+<!-- Explore dock -->
+<aside id="explore-dock" class="explore-dock" aria-label="探索功能面板">
+    <div class="dock-drawer-frame">
+    <div id="drawer-browser" class="dock-main" data-drawer="inactive collapsed">
+      <div class="dock-header">
+        <div class="dock-header-pane dock-header-pane-cang">
+          <div class="dock-header-top">
+            <button class="dock-back" id="dock-back-btn" data-id="drawer-handle-browser" type="button" aria-label="关闭抽屉" aria-controls="drawer-browser" aria-expanded="false">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14.5 5.5 8 12l6.5 6.5"></path>
+              </svg>
+            </button>
+            <div class="dock-header-actions">
+              <button class="dock-icon-btn is-active" id="dock-chat-toggle" type="button" aria-label="聊天室开关">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M5 4h14a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-4l-5.5 3v-3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3z"></path>
+                </svg>
+              </button>
+              <button class="dock-icon-btn" id="dock-favorite-toggle" type="button" aria-label="收藏开关">
+                <svg class="heart-outline" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.5L12 21.35z"></path>
+                </svg>
+                <svg class="heart-solid" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.5L12 21.35z"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="dock-title-wrap is-empty">
+            <div class="dock-title" id="dock-current-address"></div>
+            <div class="dock-sub" id="dock-current-region"></div>
+          </div>
+        </div>
+
+        <div class="dock-header-pane dock-header-pane-xun">
+          <input id="dock-search-input" class="dock-search-input" type="search" placeholder="搜索城市、国家或地址">
+        </div>
+
+        <div class="dock-header-pane dock-header-pane-she">
+          <div class="dock-account-row">
+            <div class="dock-account-signed-in" id="dock-account-signed-in" hidden>
+              <div class="dock-account-avatar" aria-hidden="true">A</div>
+              <a class="dock-account-name" href="account.html">Account Name</a>
+              <button class="dock-logout-btn" id="dock-logout-btn" type="button">退出</button>
+            </div>
+            <div class="dock-login-prompt" id="dock-login-prompt">
+              <img class="dock-login-knocker" src="assets/knocker.png" alt="" aria-hidden="true">
+              <div class="dock-login-links">
+                <button class="dock-login-link" id="dock-login-link" type="button">花径不曾缘客扫</button>
+                <a class="dock-register-link" id="dock-register-link" href="register.html">蓬门今始为君开</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="dock-content dock-cang-panel" id="dock-cang-panel">
+        <ul class="dock-fav-list" id="favorite-list"></ul>
+        <div class="dock-place-panel">
+          <div class="dock-place-section">
+            <div class="dock-place-title">美食</div>
+            <ul class="dock-place-list" id="dock-food-list"></ul>
+          </div>
+          <div class="dock-place-section">
+            <div class="dock-place-title">景点</div>
+            <ul class="dock-place-list" id="dock-sights-list"></ul>
+          </div>
+          <div class="dock-place-section">
+            <div class="dock-place-title">住宿</div>
+            <ul class="dock-place-list" id="dock-stays-list"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="dock-content dock-search-panel" id="dock-search-panel">
+        <ul id="dock-search-results" class="dock-search-results"></ul>
+      </div>
+
+      <div class="dock-content dock-settings-panel" id="dock-settings-panel">
+        <div id="settings-default-view">
+          <div class="dock-setting-group">
+            <div class="dock-setting-title">自定义</div>
+            <label class="dock-setting-row">
+              <span>停止地球旋转</span>
+              <input id="setting-stop-rotate" type="checkbox">
+            </label>
+            <label class="dock-setting-row">
+              <span>禁用聊天室</span>
+              <input id="setting-disable-chat" type="checkbox">
+            </label>
+            <label class="dock-setting-row">
+              <span>禁用云层</span>
+              <input id="setting-disable-cloud" type="checkbox">
+            </label>
+            <label class="dock-setting-row">
+              <span>禁用大气层</span>
+              <input id="setting-disable-atmosphere" type="checkbox">
+            </label>
+            <label class="dock-setting-row">
+              <span>主题模式</span>
+              <select id="setting-theme">
+                <option value="dark">暗色模式</option>
+                <option value="light">明亮模式</option>
+              </select>
+            </label>
+            <label class="dock-setting-row">
+              <span>地图质量</span>
+              <select id="setting-quality">
+                <option value="low">低</option>
+                <option value="medium" selected>中</option>
+                <option value="high">高</option>
+              </select>
+            </label>
+            <label class="dock-setting-row">
+              <span>语言设置</span>
+              <select id="setting-language">
+                <option value="zh" selected>中文</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+            <button id="setting-random-city" class="dock-action-row" type="button">随机城市</button>
+          </div>
+
+          <div class="dock-setting-group">
+            <div class="dock-setting-title">信息</div>
+            <a class="dock-link-row" id="setting-feedback" href="mailto:feedback@example.com">发送反馈</a>
+            <a class="dock-link-row" id="setting-privacy" href="#" target="_blank" rel="noopener">Privacy Policy</a>
+          </div>
+        </div>
+
+        <div class="dock-login-view" id="settings-login-view" hidden>
+          <button class="dock-login-back" id="settings-login-back" type="button" aria-label="返回设置">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M14.5 5.5 8 12l6.5 6.5"></path>
+            </svg>
+          </button>
+          <form class="dock-login-form" id="settings-login-form">
+            <label>
+              <span id="settings-login-email-label">邮箱</span>
+              <input id="settings-login-email" name="email" type="email" autocomplete="email" pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" required>
+            </label>
+            <label>
+              <span id="settings-login-password-label">密码</span>
+              <span class="dock-password-field">
+                <input id="settings-login-password" name="password" type="password" autocomplete="current-password" required>
+                <button id="settings-login-password-toggle" class="dock-password-toggle" type="button" aria-label="显示密码">
+                  <svg class="password-eye-open" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg class="password-eye-closed" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 3l18 18"></path>
+                    <path d="M10.6 10.6A3 3 0 0 0 12 15a3 3 0 0 0 2.4-4.8"></path>
+                    <path d="M9.9 5.3A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a18.5 18.5 0 0 1-3.1 4"></path>
+                    <path d="M6.6 6.8C3.7 8.7 2 12 2 12s3.5 7 10 7c1.5 0 2.8-.3 4-.8"></path>
+                  </svg>
+                </button>
+              </span>
+            </label>
+            <label class="dock-login-check">
+              <input id="settings-login-remember" type="checkbox">
+              <span id="settings-login-remember-label">记住密码</span>
+            </label>
+            <button id="settings-login-submit" type="submit">登录</button>
+          </form>
+        </div>
+      </div>
+      </div>
+    </div>
+
+    <nav class="dock-nav">
+      <button class="dock-nav-btn" data-tab="cang" type="button">
+        <span class="dock-icon dock-icon-heart">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 21.35 10.55 20C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.5L12 21.35z"></path>
+          </svg>
+        </span>
+        <span class="dock-label">藏</span>
+      </button>
+      <button class="dock-nav-btn" data-tab="xun" type="button">
+        <span class="dock-icon dock-icon-search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5"></circle>
+            <path d="M16 16 21 21"></path>
+          </svg>
+        </span>
+        <span class="dock-label">寻</span>
+      </button>
+      <button class="dock-nav-btn" data-tab="she" type="button">
+        <span class="dock-icon dock-icon-menu">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 7h16"></path>
+            <path d="M4 12h16"></path>
+            <path d="M4 17h16"></path>
+          </svg>
+        </span>
+        <span class="dock-label">设</span>
+      </button>
+    </nav>
+  </div>
+</aside>
+
+<aside id="chat-panel" class="chat-panel" aria-label="地区聊天室">
+  <div class="chat-panel-head">
+    <div class="chat-panel-title"></div>
+    <div class="chat-panel-actions">
+      <button id="chat-size-toggle" class="chat-size-toggle" type="button" aria-label="聊天室全高开关">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 4v16"></path>
+          <path d="M8.5 7.5 12 4l3.5 3.5"></path>
+          <path d="m8.5 16.5 3.5 3.5 3.5-3.5"></path>
+        </svg>
+      </button>
+      <button id="chat-close-btn" class="chat-close-btn" type="button" aria-label="关闭聊天室">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6 6 18 18"></path>
+          <path d="M18 6 6 18"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div class="chat-panel-body">
+    <ul class="chat-content"></ul>
+    <input type="text" placeholder="输入消息..." />
+  </div>
+</aside>
+
+<!-- Country info panel -->
+<!-- <div id="info-panel">
+  <div class="panel-header">
+    <div class="panel-flag" id="panel-flag">🌍</div>
+    <div>
+      <div class="panel-name" id="panel-name">国家名</div>
+      <div class="panel-en" id="panel-en">COUNTRY</div>
+    </div>
+  </div>
+  <div class="panel-divider"></div>
+  <div class="panel-desc" id="panel-desc"></div>
+  <div class="panel-section">
+    <div class="panel-section-label">特色美食</div>
+    <div class="panel-tags" id="panel-food"></div>
+  </div>
+  <div class="panel-section">
+    <div class="panel-section-label">必游之地</div>
+    <div class="panel-tags" id="panel-play"></div>
+  </div>
+</div> -->
+
+<!-- Bottom bar -->
+<div class="bottom-bar">
+  <div class="bottom-dot"></div>
+  <div class="bottom-hint" id="bottom-hint">拖动旋转 · 滚轮缩放</div>
+  <div class="bottom-dot"></div>
+</div>
+
+<!-- Counter -->
+<div class="country-counter">
+  <div class="counter-num">245</div>
+  <div class="counter-label">个国家与地区</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<script src="js/mockProfile.js"></script>
+<script src="js/appState.js"></script>
+<script src="js/loading.js"></script>
+<script src="js/language.js"></script>
+<script src="js/chatPanel.js"></script>
+<script src="js/exploreDock.js"></script>
+<script src="js/globe.js"></script>
+<script src="js/settingsPanel.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

@@ -77,6 +77,7 @@ DB_PORT=3306
 DB_USER=YOUR_DB_USER
 DB_PASSWORD=YOUR_DB_PASSWORD
 DB_NAME=db_huanyuzhi
+DB_SSL=true
 RESEND_API_KEY=your_resend_api_key_here
 MAIL_FROM=Huanyuzhi <onboarding@resend.dev>
 ABLY_API_KEY=your_ably_api_key
@@ -90,6 +91,7 @@ $env:DB_PORT="3306"
 $env:DB_USER="YOUR_DB_USER"
 $env:DB_PASSWORD="YOUR_DB_PASSWORD"
 $env:DB_NAME="db_huanyuzhi"
+$env:DB_SSL="true"
 $env:RESEND_API_KEY="your_resend_api_key_here"
 $env:MAIL_FROM="Huanyuzhi <onboarding@resend.dev>"
 $env:ABLY_API_KEY="your_ably_api_key"
@@ -121,6 +123,7 @@ DB_PORT
 DB_USER
 DB_PASSWORD
 DB_NAME
+DB_SSL
 RESEND_API_KEY
 MAIL_FROM
 ABLY_API_KEY
@@ -130,7 +133,7 @@ Deploy steps:
 
 1. Push this repository to GitHub.
 2. Import the repository in Vercel as a Next.js project.
-3. Add the Aiven MySQL values to the `DB_*` environment variables.
+3. Add the Aiven MySQL values to the `DB_*` environment variables. Set `DB_SSL=true` for Aiven.
 4. Add `RESEND_API_KEY`, `MAIL_FROM`, and `ABLY_API_KEY`.
 5. Redeploy after adding or changing environment variables.
 

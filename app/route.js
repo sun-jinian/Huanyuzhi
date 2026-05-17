@@ -1,8 +1,3 @@
-import html from '../lib/html-response.cjs';
-
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
-export function GET() {
-  return html.htmlResponse('index.html');
+export function GET(request) {
+  return Response.redirect(new URL('/index.html', request.url), 307);
 }

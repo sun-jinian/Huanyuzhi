@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>注册 · 寰宇志</title>
+<link href="css/index.css" rel="stylesheet">
+</head>
+<body class="register-page">
+  <main class="register-shell">
+    <div class="register-toolbar">
+      <a href="index.html" id="register-back-map" data-i18n="back">返回地图</a>
+      <select id="register-language" aria-label="Language">
+        <option value="zh">中文</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+    <form class="register-form" id="register-form">
+      <img class="register-knocker" src="assets/knocker.png" alt="">
+      <h1 data-i18n="title">注册账号</h1>
+      <label>
+        <span class="is-required" data-i18n="username">用户名</span>
+        <input id="register-username" type="text" autocomplete="username" required>
+      </label>
+      <label>
+        <span class="is-required" data-i18n="email">邮箱</span>
+        <input id="register-email" type="email" autocomplete="email" required>
+      </label>
+      <label>
+        <span class="is-required" data-i18n="password">密码</span>
+        <input id="register-password" type="password" autocomplete="new-password" required>
+      </label>
+      <label>
+        <span class="is-required" data-i18n="confirmPassword">确认密码</span>
+        <input id="register-confirm-password" type="password" autocomplete="new-password" required>
+      </label>
+      <div class="register-field-grid">
+        <label>
+          <span data-i18n="firstName">名字（选填）</span>
+          <input id="register-first-name" type="text" autocomplete="given-name">
+        </label>
+        <label>
+          <span data-i18n="lastName">姓氏（选填）</span>
+          <input id="register-last-name" type="text" autocomplete="family-name">
+        </label>
+      </div>
+      <div class="register-field-grid">
+        <label>
+          <span data-i18n="fromCountry">来自（选填）</span>
+          <select id="register-from-country" autocomplete="country-name">
+            <option value="" data-i18n="countryPlaceholder">选择国家/地区</option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="birthday">生日（选填）</span>
+          <input id="register-birthday" type="date">
+        </label>
+      </div>
+      <label>
+        <span data-i18n="preferredCountry">偏好国家（选填）</span>
+        <select id="register-preferred-country" autocomplete="country-name">
+          <option value="" data-i18n="countryPlaceholder">选择国家/地区</option>
+        </select>
+      </label>
+      <p class="register-note" id="register-status" aria-live="polite"></p>
+      <button type="submit" data-i18n="submit">创建账号</button>
+    </form>
+  </main>
+  <script src="js/register.js"></script>
+</body>
+</html>
